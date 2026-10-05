@@ -1,0 +1,137 @@
+<dt-page-header title="Spaces" description="Cross-building space search">
+  <div actions>
+    <button
+      *hasPermission="'buildings'; action: 'create'"
+      type="button"
+      class="bg-dashboard-accent hover:bg-dashboard-accent/90 rounded-control flex w-fit cursor-pointer items-center gap-1.5 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
+      (click)="showAddSpace.set(true)"
+    >
+      + New Space
+    </button>
+  </div>
+</dt-page-header>
+
+<div hlmCard size="sm" class="mb-3">
+  <div hlmCardContent>
+    <dt-filter-bar [activeFilterCount]="activeFilterCount()" class="block">
+      <dt-search-input primary placeholder="Search spaces…" [value]="search()" (valueChange)="search.set($event)" />
+      <hlm-select
+        inline
+        [value]="filterBuildingId()"
+        [itemToString]="buildingLabel"
+        (valueChange)="onFilterBuildingChange($event ?? '')"
+      >
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All buildings" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of buildingOptions(); track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select
+        inline
+        [value]="filterFloorId()"
+        [itemToString]="filterFloorLabel"
+        (valueChange)="filterFloorId.set($event ?? '')"
+      >
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All floors" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of filterFloorOptions(); track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="filterKind()" [itemToString]="filterKindLabel" (valueChange)="filterKind.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All types" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of filterKindOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <button
+        inline
+        type="button"
+        class="text-muted-foreground hover:text-foreground ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!hasActiveFilters()"
+        (click)="resetFilters()"
+      >
+        <ng-icon name="lucideRotateCcw" size="14" />
+        Reset
+      </button>
+    </dt-filter-bar>
+  </div>
+</div>
+
+<dt-data-table [columns]="columns" [rows]="rows()" emptyTitle="No spaces match these filters" (rowClick)="openSpace($event)" />
+
+<hlm-dialog [state]="showAddSpace() ? 'open' : 'closed'" (closed)="showAddSpace.set(false)">
+  <ng-template hlmDialogPortal>
+    <hlm-dialog-content class="w-[26rem] max-w-[calc(100%-2rem)] sm:max-w-[26rem]">
+      <hlm-dialog-header>
+        <h3 hlmDialogTitle>New Space</h3>
+      </hlm-dialog-header>
+
+      <div class="flex flex-col gap-3">
+        <p class="text-muted-foreground text-xs">
+          Creates the space and immediately seeds it as a working smart room — a Fan, Lights, and AC in Switches; a
+          Door Contact, Motion, and AQI sensor in Sensors; and one active Entry Lighting automation.
+        </p>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Space Name <span class="text-dashboard-danger-strong">*</span></span>
+          <input hlmInput [formField]="identityForm.name" placeholder="e.g. Primary Bedroom" />
+          @if (identityForm.name().touched() && !identityForm.name().valid()) {
+            <span class="text-xs text-red-600">{{ identityForm.name().errors()[0]?.message }}</span>
+          }
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Building</span>
+          <hlm-select [value]="buildingId()" [itemToString]="buildingLabel" (valueChange)="onBuildingChange($event ?? '')">
+            <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Select building" /></hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of buildingOptions(); track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Floor</span>
+          <hlm-select [value]="floorId()" [itemToString]="floorLabel" [disabled]="!buildingId()" (valueChange)="floorId.set($event ?? '')">
+            <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Select floor" /></hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of floorOptions(); track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Type</span>
+          <hlm-select [value]="kind()" [itemToString]="kindLabel" (valueChange)="kind.set($any($event) ?? 'office')">
+            <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of kindOptions; track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        </label>
+
+        <div class="mt-2 flex justify-end gap-2">
+          <button hlmBtn variant="ghost" type="button" (click)="showAddSpace.set(false)">Cancel</button>
+          <button hlmBtn type="button" [disabled]="!canSubmit() || submitting()" (click)="createSmartRoom()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Create Space
+          </button>
+        </div>
+      </div>
+    </hlm-dialog-content>
+  </ng-template>
+</hlm-dialog>

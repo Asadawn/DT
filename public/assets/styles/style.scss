@@ -1,0 +1,105 @@
+.p-card {
+    border-radius: 12px !important;
+    box-shadow: 0 1px 1px -3px rgba(0, 0, 0, 0.2), 0 0px 0px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+.p-card .p-card-body {
+    padding: 0px 13px !important;
+}
+
+.main-index {
+    .p-card {
+        min-height: 106px;
+    }
+}
+
+.index-card {
+    .p-card {
+        background: #E2EEFF !important;
+    }
+}
+
+// .p-dropdown {
+//     height: 42px;
+//     width: 100%;
+//     background: #E2EEFF;
+//     border: none;
+//     margin-bottom: 22px;
+//     border-radius: 12px
+// }
+
+.p-dropdown .p-dropdown-label {
+    color: #242424;
+    font-size: 14px;
+}
+
+.gauge-bar {
+    .p-card {
+        height: 218px;
+
+    }
+}
+
+.graph-filter {
+    .p-dropdown {
+        height: 31px;
+        width: 149px;
+        background: #EDEEF4;
+        margin-bottom: 0px;
+    }
+}
+
+.energy-filter {
+    .p-dropdown {
+        height: 31px;
+        width: 139px;
+        background: #EDEEF4;
+        margin-bottom: 0px;
+        margin-right: 10px;
+    }
+}
+
+.line-chart {
+    .p-card {
+        height: 387px;
+
+    }
+}
+
+.energy-graph-card {
+    .p-card {
+        height: 354px;
+
+    }
+}
+
+.real-time-data-top {
+    .p-card .p-card-body {
+        padding: 0 !important;
+
+        .p-card-content {
+            padding: 0 !important;
+        }
+    }
+}
+
+.device-box {
+    .p-card .p-card-body {
+        min-height: 357px;
+    }
+}
+
+.power-factor {
+    .p-card .p-card-body {
+        min-height: 309px;
+    }
+}
+
+.ui-dropdown-panel {
+    z-index: 9999 !important;
+    display: block !important;
+}
+
+.p-dropdown-items {
+    padding-left: 0px !important;
+}

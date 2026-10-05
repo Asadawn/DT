@@ -1,0 +1,30 @@
+<dt-page-header title="Notifications" description="All / Unread, grouped by day">
+  <div actions>
+    <button hlmBtn variant="ghost" size="sm" (click)="markAllRead()">Mark all read</button>
+  </div>
+</dt-page-header>
+
+<div hlmTabs [tab]="filter()" (tabActivated)="filter.set($event)" class="mb-3 block">
+  <div hlmTabsList>
+    @for (tab of filterTabs; track tab.id) {
+      <button [hlmTabsTrigger]="tab.id">{{ tab.label }}</button>
+    }
+  </div>
+</div>
+
+@if (groups().length === 0) {
+  <dt-empty-state icon="◔" title="No notifications" />
+} @else {
+  <div class="flex flex-col gap-4">
+    @for (group of groups(); track group.label) {
+      <section>
+        <h2 class="text-muted-foreground mb-1 text-xs font-medium uppercase">{{ group.label }}</h2>
+        <div class="rounded-card border-border divide-border divide-y border bg-white">
+          @for (notification of group.items; track notification.id) {
+            <dt-notification-item [notification]="notification" (opened)="open(notification)" />
+          }
+        </div>
+      </section>
+    }
+  </div>
+}

@@ -1,0 +1,169 @@
+@if (!compact()) {
+  <div hlmCard size="sm" class="mb-3">
+    <div hlmCardContent>
+      <div class="flex flex-wrap items-center gap-2">
+        <hlm-select
+          [value]="buildingId()"
+          [itemToString]="buildingLabel"
+          (valueChange)="onBuildingChange($event)"
+        >
+          <hlm-select-trigger class="w-44"
+            ><hlm-select-value placeholder="All buildings"
+          /></hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (option of buildingOptions(); track option.value) {
+              <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+
+        <hlm-select
+          [value]="floorId()"
+          [itemToString]="floorLabel"
+          (valueChange)="onFloorChange($event)"
+        >
+          <hlm-select-trigger class="w-40"
+            ><hlm-select-value placeholder="All floors"
+          /></hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (option of floorOptions(); track option.value) {
+              <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+        @if (!isDeviceHealth() && !isElectrical() && !isOccupancy()) {
+          <hlm-select
+            [value]="effectiveDeviceId()"
+            [itemToString]="deviceLabel"
+            (valueChange)="deviceId.set($event ?? '')"
+          >
+            <hlm-select-trigger class="w-72"
+              ><hlm-select-value placeholder="Select device"
+            /></hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of deviceOptions(); track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+          @if (metricOptions().length > 1) {
+            <hlm-select
+              [value]="effectiveMetric()"
+              [itemToString]="metricLabel"
+              (valueChange)="metric.set($event ?? '')"
+            >
+              <hlm-select-trigger class="w-44"
+                ><hlm-select-value placeholder="Select metric"
+              /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of metricOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          }
+        }
+        @if (!isDeviceHealth() && !isOccupancy()) {
+          <div
+            hlmToggleGroup
+            type="single"
+            [value]="rangeId()"
+            (valueChange)="rangeId.set($any($event) ?? '')"
+          >
+            @for (segment of rangeSegments; track segment.id) {
+              <button hlmToggleGroupItem [value]="segment.id">{{ segment.label }}</button>
+            }
+          </div>
+        }
+        <button
+          type="button"
+          class="text-muted-foreground hover:text-foreground ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!hasActiveFilters()"
+          (click)="resetFilters()"
+        >
+          <ng-icon name="lucideRotateCcw" size="14" />
+          Reset
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (isDeviceHealth()) {
+  <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+    <dt-status-summary title="Device Health" [items]="connectivitySummary()" />
+    <dt-chart-card title="Devices by Connectivity">
+      <dt-bar-chart
+        [labels]="connectivityBarLabels()"
+        [values]="connectivityBarValues()"
+        label="Devices"
+      />
+    </dt-chart-card>
+  </div>
+} @else if (isOccupancy()) {
+  <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+    <dt-status-summary title="Occupancy Right Now" [items]="occupancyStatusSummary()" />
+    <dt-chart-card title="Occupancy Rate — last 14 days">
+      <dt-bar-chart
+        [labels]="occupancyRateSeries().labels"
+        [values]="occupancyRateSeries().values"
+        label="Occupancy %"
+        unit="%"
+      />
+    </dt-chart-card>
+  </div>
+} @else if (isElectrical()) {
+  <app-electrical-parameters-grid
+    [buildingId]="buildingId()"
+    [floorId]="floorId()"
+    [range]="rangeId()"
+  />
+} @else if (effectiveDeviceId(); as deviceId) {
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
+    <dt-device-telemetry-chart
+      [deviceId]="deviceId"
+      [metric]="effectiveMetric()"
+      [range]="range()"
+      [title]="chartTitle()"
+    />
+
+    @if (section() === 'energy') {
+      <dt-chart-card title="Today's Energy by Meter">
+        <dt-bar-chart
+          [labels]="energyByMeterLabels()"
+          [values]="energyByMeterValues()"
+          label="Energy"
+          unit="kWh"
+        />
+      </dt-chart-card>
+    } @else if (currentReadingValue(); as value) {
+      <dt-chart-card title="Current Reading">
+        <div class="flex h-full flex-col items-center justify-center gap-2">
+          <dt-gauge
+            [value]="value"
+            [min]="gaugeRange().min"
+            [max]="gaugeRange().max"
+            [unit]="currentReadingUnit()"
+            [color]="gaugeColor()"
+          />
+        </div>
+      </dt-chart-card>
+    }
+  </div>
+
+  @if (section() === 'environment') {
+    <div class="mt-4">
+      <app-environmental-parameters-grid [buildingId]="buildingId()" [floorId]="floorId()" />
+    </div>
+  } @else if (section() === 'aqi') {
+    <div class="mt-4">
+      <app-aqi-sensor-parameters [buildingId]="buildingId()" [floorId]="floorId()" />
+    </div>
+  }
+} @else {
+  <dt-empty-state
+    icon="▥"
+    title="No matching devices"
+    description="No devices with this capability in the selected scope."
+  />
+}

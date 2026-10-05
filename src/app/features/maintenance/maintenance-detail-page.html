@@ -1,0 +1,174 @@
+@if (request(); as request) {
+  <dt-page-header
+    [title]="request.title"
+    [breadcrumb]="[{ label: 'Maintenances', link: '/operations/maintenance' }]"
+    [description]="(building()?.name ?? '') + ' · ' + request.category"
+  >
+    <div actions>
+      <dt-status-chip [status]="request.priority" />
+      <dt-status-chip [status]="request.status" />
+    </div>
+  </dt-page-header>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+    <div class="flex flex-col gap-4">
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="mb-3 flex items-center gap-2 text-sm font-medium">
+          <ng-icon name="lucideFileWarning" size="16" class="text-dashboard-accent" />
+          Issue Description
+        </h2>
+
+        <div class="bg-dashboard-danger/10 flex items-start gap-2 rounded-xl px-3 py-2.5">
+          <ng-icon name="lucideTriangleAlert" size="16" class="text-dashboard-danger-strong mt-0.5 shrink-0" />
+          <p class="text-dashboard-danger-strong text-sm leading-snug">{{ request.description }}</p>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div class="flex items-start gap-2">
+            <ng-icon name="lucideWrench" size="16" class="text-dashboard-accent mt-0.5 shrink-0" />
+            <div class="min-w-0">
+              <p class="text-muted-foreground text-xs">Device Type</p>
+              <p class="truncate text-sm font-medium">{{ deviceTypeLabel() }}</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-2">
+            <ng-icon name="lucideMapPin" size="16" class="text-dashboard-accent mt-0.5 shrink-0" />
+            <div class="min-w-0">
+              <p class="text-muted-foreground text-xs">Location</p>
+              <p class="truncate text-sm font-medium">{{ space()?.name ?? floor()?.name ?? building()?.name ?? '—' }}</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-2">
+            <ng-icon name="lucideBuilding2" size="16" class="text-dashboard-accent mt-0.5 shrink-0" />
+            <div class="min-w-0">
+              <p class="text-muted-foreground text-xs">Building</p>
+              <p class="truncate text-sm font-medium">{{ building()?.name ?? '—' }}</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-2">
+            <ng-icon name="lucideLayers" size="16" class="text-dashboard-accent mt-0.5 shrink-0" />
+            <div class="min-w-0">
+              <p class="text-muted-foreground text-xs">Floor</p>
+              <p class="truncate text-sm font-medium">{{ floor()?.name ?? '—' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <dl class="border-border mt-4 flex flex-wrap gap-x-6 gap-y-1 border-t pt-3 text-xs">
+          <div><dt class="text-muted-foreground inline">Requester: </dt><dd class="inline">{{ request.requester }}</dd></div>
+          @if (request.requesterContact) {
+            <div><dt class="text-muted-foreground inline">Contact: </dt><dd class="inline">{{ request.requesterContact }}</dd></div>
+          }
+          @if (request.requesterEmail) {
+            <div><dt class="text-muted-foreground inline">Email: </dt><dd class="inline">{{ request.requesterEmail }}</dd></div>
+          }
+          @if (request.assignee) {
+            <div><dt class="text-muted-foreground inline">Assignee: </dt><dd class="inline">{{ request.assignee }}</dd></div>
+          }
+        </dl>
+        @if (request.imageDataUrl) {
+          <img
+            [src]="request.imageDataUrl"
+            alt="Photo of the reported issue"
+            class="border-border mt-3 h-40 w-full max-w-sm rounded-control border object-cover"
+          />
+        }
+      </section>
+
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="mb-3 text-sm font-medium">Timeline</h2>
+        <dt-timeline [entries]="request.timeline" />
+      </section>
+
+      <app-maintenance-vendor-panel [maintenanceId]="request.id" [maintenanceCategory]="request.category" />
+    </div>
+
+    <aside class="flex h-fit flex-col gap-4">
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="mb-3 flex items-center gap-2 text-sm font-medium">
+          <ng-icon name="lucideLink2" size="16" class="text-dashboard-accent" />
+          Related Information
+        </h2>
+        <div class="divide-border flex flex-col divide-y">
+          <a [routerLink]="['/buildings', building()!.id]" class="hover:bg-muted/50 -mx-1 flex items-center justify-between gap-2 rounded-lg px-1 py-2.5">
+            <span class="flex items-center gap-2 text-sm">
+              <ng-icon name="lucideBuilding2" size="15" class="text-muted-foreground" />
+              <span class="text-muted-foreground">Building</span>
+            </span>
+            <span class="flex items-center gap-1 text-sm font-medium">
+              {{ building()!.name }}
+              <ng-icon name="lucideChevronRight" size="14" class="text-muted-foreground" />
+            </span>
+          </a>
+          @if (floor(); as f) {
+            <a
+              [routerLink]="['/buildings', building()!.id, 'floors', f.id]"
+              class="hover:bg-muted/50 -mx-1 flex items-center justify-between gap-2 rounded-lg px-1 py-2.5"
+            >
+              <span class="flex items-center gap-2 text-sm">
+                <ng-icon name="lucideLayers" size="15" class="text-muted-foreground" />
+                <span class="text-muted-foreground">Floor</span>
+              </span>
+              <span class="flex items-center gap-1 text-sm font-medium">
+                {{ f.name }}
+                <ng-icon name="lucideChevronRight" size="14" class="text-muted-foreground" />
+              </span>
+            </a>
+          }
+          @if (space(); as s) {
+            <a
+              [routerLink]="['/buildings', building()!.id, 'floors', floor()!.id, 'spaces', s.id]"
+              class="hover:bg-muted/50 -mx-1 flex items-center justify-between gap-2 rounded-lg px-1 py-2.5"
+            >
+              <span class="flex items-center gap-2 text-sm">
+                <ng-icon name="lucideMapPin" size="15" class="text-muted-foreground" />
+                <span class="text-muted-foreground">Space</span>
+              </span>
+              <span class="flex items-center gap-1 text-sm font-medium">
+                {{ s.name }}
+                <ng-icon name="lucideChevronRight" size="14" class="text-muted-foreground" />
+              </span>
+            </a>
+          }
+          @if (device(); as d) {
+            <a [routerLink]="['/devices', d.id]" class="hover:bg-muted/50 -mx-1 flex items-center justify-between gap-2 rounded-lg px-1 py-2.5">
+              <span class="flex items-center gap-2 text-sm">
+                <ng-icon name="lucideHash" size="15" class="text-muted-foreground" />
+                <span class="text-muted-foreground">Device ID</span>
+              </span>
+              <span class="flex items-center gap-1 text-sm font-medium">
+                {{ d.id }}
+                <ng-icon name="lucideChevronRight" size="14" class="text-muted-foreground" />
+              </span>
+            </a>
+          }
+        </div>
+      </section>
+
+      <section class="rounded-card border-border border bg-white p-4">
+      <h2 class="mb-3 text-sm font-medium">Actions</h2>
+      @if (nextActions().length === 0) {
+        <dt-empty-state icon="✓" title="No further actions" />
+      } @else {
+        <div class="flex flex-col gap-2">
+          @for (action of nextActions(); track action.status) {
+            <button
+              hlmBtn
+              [variant]="action.danger ? 'destructive' : 'secondary'"
+              [disabled]="updating()"
+              (click)="setStatus(action.status)"
+            >
+              @if (updating()) {
+                <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+              }
+              {{ action.label }}
+            </button>
+          }
+        </div>
+      }
+      </section>
+    </aside>
+  </div>
+} @else {
+  <dt-empty-state icon="✎" title="Request not found" />
+}

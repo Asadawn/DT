@@ -1,0 +1,8 @@
+<app-room-stat-card icon="lucideShield" label="Access Control">
+  <a header-action routerLink="/operations/access-assignments" class="text-merik text-xs font-medium hover:underline">Manage Access →</a>
+
+  <p class="flex items-center gap-1.5 text-sm font-semibold">
+    <span class="h-1.5 w-1.5 shrink-0 rounded-full" [class]="hasActiveAccess() ? 'bg-dashboard-accent' : 'bg-muted-foreground/50'"></span>
+    {{ hasActiveAccess() ? 'Active' : 'No Active Access' }}
+  </p>
+</app-room-stat-card>

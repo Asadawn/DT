@@ -1,0 +1,197 @@
+<section class="rounded-card border-border border bg-white p-4">
+  <div class="mb-3 flex items-center justify-between">
+    <h2 class="text-sm font-medium">Vendors</h2>
+    @if (!showInvitePanel()) {
+      <button *hasPermission="'vendors'; action: 'create'" hlmBtn variant="secondary" size="sm" type="button" (click)="showInvitePanel.set(true)">Request Quotations</button>
+    }
+  </div>
+
+  @if (showInvitePanel()) {
+    <div class="border-border bg-muted/30 mb-4 rounded-control border p-3">
+      @if (eligibleVendors().length === 0) {
+        <p class="text-muted-foreground text-sm">No more active vendors available to invite.</p>
+      } @else {
+        <p class="text-muted-foreground mb-2 text-xs">Select vendors to invite for a quotation:</p>
+        <div class="mb-3 flex flex-col gap-2">
+          @for (vendor of eligibleVendors(); track vendor.id) {
+            <label class="flex items-center gap-2 text-sm">
+              <hlm-checkbox
+                [checked]="selectedVendorIds().has(vendor.id)"
+                (checkedChange)="toggleInviteVendor(vendor.id, $event)"
+              />
+              {{ vendor.name }}
+              <span class="text-muted-foreground text-xs">({{ vendor.specialties.join(', ') }})</span>
+            </label>
+          }
+        </div>
+      }
+      <div class="flex gap-2">
+        <button hlmBtn size="sm" type="button" [disabled]="inviting() || selectedVendorIds().size === 0" (click)="sendInvitations()">
+          Send Invitations
+        </button>
+        <button hlmBtn variant="ghost" size="sm" type="button" (click)="showInvitePanel.set(false)">Cancel</button>
+      </div>
+    </div>
+  }
+
+  @if (invitations().length === 0) {
+    <p class="text-muted-foreground text-sm">No vendors invited yet.</p>
+  } @else {
+    <ul class="flex flex-col gap-3">
+      @for (invitation of invitations(); track invitation.id) {
+        <li class="border-border rounded-control border p-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <a [routerLink]="['/operations/vendors', invitation.vendorId]" class="text-sm font-medium hover:underline">
+              {{ vendorName(invitation.vendorId) }}
+            </a>
+            <div class="flex items-center gap-2">
+              <dt-status-chip [status]="invitation.status" />
+              @if (invitation.jobStatus) {
+                <dt-status-chip [status]="invitation.jobStatus" />
+              }
+            </div>
+          </div>
+
+          @if (invitation.quotation; as quotation) {
+            <p class="text-muted-foreground mt-1 text-xs">
+              ${{ quotation.laborCost + quotation.materialCost }} · {{ quotation.arrivalWindow }} · {{ quotation.durationHours }}h
+              @if (quotation.notes) {
+                — {{ quotation.notes }}
+              }
+            </p>
+          }
+
+          <div class="mt-2 flex flex-wrap gap-2">
+            @if (invitation.status === 'invited' || invitation.status === 'viewed') {
+              <button *hasPermission="'vendors'; action: 'edit'" hlmBtn variant="secondary" size="xs" type="button" (click)="startQuotation(invitation.id)">Enter Quotation</button>
+              <button *hasPermission="'vendors'; action: 'edit'" hlmBtn variant="ghost" size="xs" type="button" (click)="decline(invitation.id)">Mark Declined</button>
+            }
+            @if (invitation.status === 'quoted') {
+              @if (selectingId() !== invitation.id) {
+                <button *hasPermission="'vendors'; action: 'edit'" hlmBtn size="xs" type="button" (click)="startSelect(invitation.id)">Select This Vendor</button>
+              }
+            }
+            @if (invitation.status === 'selected' && invitation.jobStatus && nextJobStatus[invitation.jobStatus]) {
+              <button
+                *hasPermission="'vendors'; action: 'edit'"
+                hlmBtn
+                size="xs"
+                type="button"
+                [disabled]="updatingJobId() === invitation.id"
+                (click)="advanceJob(invitation)"
+              >
+                Mark {{ nextJobStatus[invitation.jobStatus] }}
+              </button>
+            }
+          </div>
+
+          @if (editingQuotationId() === invitation.id) {
+            <div class="border-border bg-muted/30 mt-2 grid grid-cols-1 gap-2 rounded-control border p-2 sm:grid-cols-3">
+              <input
+                placeholder="Arrival window"
+                [value]="quotationDraft().arrivalWindow"
+                (input)="updateQuotationDraft({ arrivalWindow: $any($event.target).value })"
+                class="border-border bg-background rounded-control border px-2 py-1.5 text-sm"
+              />
+              <input
+                type="number"
+                placeholder="Duration (hours)"
+                [value]="quotationDraft().durationHours"
+                (input)="updateQuotationDraft({ durationHours: $any($event.target).valueAsNumber || 0 })"
+                class="border-border bg-background rounded-control border px-2 py-1.5 text-sm"
+              />
+              <hlm-date-picker
+                [date]="isoToDate(quotationDraft().validUntil ? quotationDraft().validUntil.slice(0, 10) : '')"
+                (dateChange)="setQuotationValidUntil($event)"
+              >
+                <hlm-date-picker-input placeholder="Valid until" />
+              </hlm-date-picker>
+              <input
+                type="number"
+                placeholder="Labor cost"
+                [value]="quotationDraft().laborCost"
+                (input)="updateQuotationDraft({ laborCost: $any($event.target).valueAsNumber || 0 })"
+                class="border-border bg-background rounded-control border px-2 py-1.5 text-sm"
+              />
+              <input
+                type="number"
+                placeholder="Material cost"
+                [value]="quotationDraft().materialCost"
+                (input)="updateQuotationDraft({ materialCost: $any($event.target).valueAsNumber || 0 })"
+                class="border-border bg-background rounded-control border px-2 py-1.5 text-sm"
+              />
+              <input
+                placeholder="Notes"
+                [value]="quotationDraft().notes"
+                (input)="updateQuotationDraft({ notes: $any($event.target).value })"
+                class="border-border bg-background rounded-control border px-2 py-1.5 text-sm sm:col-span-3"
+              />
+              <div class="flex gap-2 sm:col-span-3">
+                <button hlmBtn size="xs" type="button" [disabled]="savingQuotation()" (click)="submitQuotation(invitation.id)">Save Quotation</button>
+                <button hlmBtn variant="ghost" size="xs" type="button" (click)="cancelQuotation()">Cancel</button>
+              </div>
+            </div>
+          }
+
+          @if (selectingId() === invitation.id) {
+            <div class="border-border bg-muted/30 mt-2 flex flex-wrap items-center gap-2 rounded-control border p-2">
+              <input
+                placeholder="Technician name"
+                [value]="technicianDraft()"
+                (input)="technicianDraft.set($any($event.target).value)"
+                class="border-border bg-background rounded-control border px-2 py-1.5 text-sm"
+              />
+              <button hlmBtn size="xs" type="button" [disabled]="selecting() || !technicianDraft().trim()" (click)="confirmSelect(invitation.id)">Confirm</button>
+              <button hlmBtn variant="ghost" size="xs" type="button" (click)="selectingId.set(null)">Cancel</button>
+            </div>
+          }
+
+          @if (invitation.status === 'selected') {
+            <div class="mt-2">
+              @if (invitation.technicianName) {
+                <p class="text-muted-foreground text-xs">Technician: {{ invitation.technicianName }}</p>
+              }
+              @if (invitation.evidence.length > 0) {
+                <ul class="mt-1 flex flex-col gap-0.5">
+                  @for (entry of invitation.evidence; track entry.id) {
+                    <li class="text-muted-foreground text-xs">{{ entry.at | date: 'short' }} — {{ entry.note }}</li>
+                  }
+                </ul>
+              }
+              @if (invitation.jobStatus !== 'complete') {
+                <div *hasPermission="'vendors'; action: 'edit'" class="mt-2 flex gap-2">
+                  <input
+                    placeholder="Add a note (evidence)"
+                    [value]="evidenceDraft()"
+                    (input)="evidenceDraft.set($any($event.target).value)"
+                    class="border-border bg-background rounded-control flex-1 border px-2 py-1.5 text-sm"
+                  />
+                  <button hlmBtn variant="secondary" size="xs" type="button" [disabled]="!evidenceDraft().trim()" (click)="addEvidence(invitation.id)">Add</button>
+                </div>
+              }
+
+              <div class="mt-2">
+                @if (accessAssignmentFor(invitation.vendorId); as grant) {
+                  <a [routerLink]="['/operations/access-assignments', grant.id]" class="inline-flex items-center gap-1.5 text-xs hover:underline">
+                    <dt-status-chip [status]="accessAssignmentStatus(invitation.vendorId)!" label="Access: {{ accessAssignmentStatus(invitation.vendorId) }}" />
+                  </a>
+                } @else {
+                  <a
+                    *hasPermission="'access-assignments'; action: 'create'"
+                    hlmBtn
+                    variant="secondary"
+                    size="xs"
+                    [routerLink]="['/operations/access-assignments/new']"
+                    [queryParams]="grantAccessQueryParams(invitation)"
+                  >
+                    Grant Temporary Access
+                  </a>
+                }
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

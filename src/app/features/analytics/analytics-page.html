@@ -1,0 +1,225 @@
+@if (isAll() && (!buildingId() || !floorId())) {
+  <div class="flex min-h-[70vh] items-center justify-center">
+    <div hlmCard class="w-full max-w-2xl [--card-spacing:0px]">
+      <div hlmCardContent class="flex flex-col items-center gap-5 px-18 py-20 text-center">
+        <img src="/assets/icons/analytics-screen.svg" alt="" class="h-[118px] w-[161px]" />
+        <div class="flex flex-col gap-1">
+          <h2 class="text-lg font-semibold">This is where you'll view your analytics</h2>
+          <p class="text-muted-foreground text-sm">
+            You can select the building and floor to check the analytics
+          </p>
+        </div>
+        <div class="mt-1 flex w-full gap-3">
+          <hlm-select
+            class="flex-1"
+            [value]="buildingId()"
+            [itemToString]="buildingLabel"
+            (valueChange)="onBuildingChange($any($event))"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Select Building" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of buildingOptions(); track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+
+          <hlm-select
+            class="flex-1"
+            [disabled]="!buildingId()"
+            [value]="floorId()"
+            [itemToString]="floorLabel"
+            (valueChange)="onFloorChange($any($event))"
+          >
+            <hlm-select-trigger class="w-full"
+              ><hlm-select-value placeholder="Select Floor"
+            /></hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of floorOptions(); track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+      </div>
+    </div>
+  </div>
+} @else {
+  <dt-page-header [title]="title()" [description]="description()" [breadcrumb]="breadcrumb" />
+
+  <nav class="mb-4 flex flex-wrap gap-2">
+    @for (tab of sectionTabs; track tab.path) {
+      <a
+        hlmBtn
+        variant="outline"
+        size="sm"
+        [routerLink]="tab.path"
+        routerLinkActive
+        #rla="routerLinkActive"
+        [routerLinkActiveOptions]="{ exact: tab.exact }"
+        [style.background-color]="rla.isActive ? 'var(--color-dashboard-accent)' : 'white'"
+        [style.border-color]="rla.isActive ? 'var(--color-dashboard-accent)' : null"
+        [style.color]="rla.isActive ? 'white' : null"
+      >
+        {{ tab.label }}
+      </a>
+    }
+  </nav>
+
+  @if (isAll()) {
+    <div hlmCard size="sm" class="mb-4">
+      <div hlmCardContent>
+        <div class="flex flex-wrap items-center gap-2">
+          <hlm-select
+            [value]="buildingId()"
+            [itemToString]="buildingLabel"
+            (valueChange)="onBuildingChange($any($event))"
+          >
+            <hlm-select-trigger class="w-40"
+              ><hlm-select-value placeholder="All buildings"
+            /></hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of buildingOptions(); track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+
+          <hlm-select
+            [value]="floorId()"
+            [itemToString]="floorLabel"
+            (valueChange)="onFloorChange($any($event))"
+          >
+            <hlm-select-trigger class="w-36"
+              ><hlm-select-value placeholder="All floors"
+            /></hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of floorOptions(); track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+
+          <hlm-select
+            [value]="spaceId()"
+            [itemToString]="spaceLabel"
+            (valueChange)="spaceId.set($any($event) ?? '')"
+          >
+            <hlm-select-trigger class="w-36"
+              ><hlm-select-value placeholder="All spaces"
+            /></hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (option of spaceOptions(); track option.value) {
+                <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+
+          <div class="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              class="text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              [disabled]="!hasActiveGlobalFilters()"
+              (click)="resetFilters()"
+            >
+              <ng-icon name="lucideRotateCcw" size="14" />
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <dt-section-shell
+      icon="lucideZap"
+      title="Electrical Parameters"
+      description="Power, voltage, current and electrical data"
+      viewAllLink="/analytics/electrical"
+      [scope]="scopeLabel()"
+    >
+      <app-electrical-parameters-grid
+        [buildingId]="buildingId()"
+        [floorId]="floorId()"
+        [spaceId]="spaceId()"
+      />
+    </dt-section-shell>
+
+    <dt-section-shell
+      icon="lucideLeaf"
+      title="Environmental Parameters"
+      description="Temperature, humidity and air quality monitoring"
+      viewAllLink="/analytics/environment"
+      [scope]="scopeLabel()"
+    >
+      <app-environmental-parameters-grid
+        [buildingId]="buildingId()"
+        [floorId]="floorId()"
+        [spaceId]="spaceId()"
+      />
+    </dt-section-shell>
+
+    <dt-section-shell
+      icon="lucidePlug"
+      title="Socket Controls"
+      description="Socket status and consumption"
+      [scope]="scopeLabel()"
+    >
+      <app-socket-controls-section
+        [buildingId]="buildingId()"
+        [floorId]="floorId()"
+        [spaceId]="spaceId()"
+      />
+    </dt-section-shell>
+
+    <dt-section-shell
+      icon="lucideWind"
+      title="AQI Sensor Parameters"
+      description="Detailed air-quality sensor channels"
+      viewAllLink="/analytics/aqi"
+      [scope]="scopeLabel()"
+    >
+      <app-aqi-sensor-parameters
+        [buildingId]="buildingId()"
+        [floorId]="floorId()"
+        [spaceId]="spaceId()"
+      />
+    </dt-section-shell>
+
+    <dt-section-shell
+      icon="lucideActivity"
+      title="Device Health"
+      viewAllLink="/analytics/devices"
+      [scope]="scopeLabel()"
+    >
+      <app-analytics-section-panel
+        [section]="'devices'"
+        [buildingId]="buildingId()"
+        [floorId]="floorId()"
+        [compact]="true"
+      />
+    </dt-section-shell>
+
+    <dt-section-shell
+      icon="lucideUserCheck"
+      title="Occupancy"
+      viewAllLink="/analytics/occupancy"
+      [scope]="scopeLabel()"
+    >
+      <app-analytics-section-panel
+        [section]="'occupancy'"
+        [buildingId]="buildingId()"
+        [floorId]="floorId()"
+        [compact]="true"
+      />
+    </dt-section-shell>
+  } @else {
+    <app-analytics-section-panel
+      [section]="singleSection()"
+      [(buildingId)]="buildingId"
+      [(floorId)]="floorId"
+      [buildingOptions]="buildingOptions()"
+    />
+  }
+}

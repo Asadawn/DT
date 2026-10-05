@@ -1,0 +1,83 @@
+<div class="mx-auto mt-6 max-w-2xl">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-6">
+      <a routerLink="/operations/vendors" class="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1 text-sm">
+        <ng-icon name="lucideChevronLeft" size="16" />
+        Back to Vendors
+      </a>
+
+      <h1 class="text-foreground text-center text-2xl font-semibold">{{ vendorId() ? 'Edit Vendor' : 'New Vendor' }}</h1>
+
+      <form class="flex flex-col gap-5" novalidate (submit)="$event.preventDefault(); onSubmit()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5 sm:col-span-2">
+            <span class="text-sm font-medium">Vendor name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="vendorForm.name"
+              [forceInvalid]="submitAttempted() && !vendorForm.name().valid()"
+              placeholder="Enter vendor name"
+            />
+            @if ((vendorForm.name().touched() || submitAttempted()) && !vendorForm.name().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ vendorForm.name().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Contact name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="vendorForm.contactName"
+              [forceInvalid]="submitAttempted() && !vendorForm.contactName().valid()"
+              placeholder="Enter contact name"
+            />
+            @if ((vendorForm.contactName().touched() || submitAttempted()) && !vendorForm.contactName().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ vendorForm.contactName().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Contact phone</span>
+            <input hlmInput [formField]="vendorForm.contactPhone" placeholder="Enter phone number" />
+          </label>
+          <label class="flex flex-col gap-1.5 sm:col-span-2">
+            <span class="text-sm font-medium">Contact email <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              type="email"
+              [formField]="vendorForm.contactEmail"
+              [forceInvalid]="submitAttempted() && !vendorForm.contactEmail().valid()"
+              placeholder="Enter email address"
+            />
+            @if ((vendorForm.contactEmail().touched() || submitAttempted()) && !vendorForm.contactEmail().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ vendorForm.contactEmail().errors()[0]?.message }}</span>
+            }
+          </label>
+        </div>
+
+        <div>
+          <span class="mb-1.5 block text-sm font-medium">Specialties</span>
+          <div class="flex flex-wrap gap-3">
+            @for (specialty of specialtyOptions; track specialty) {
+              <label class="flex items-center gap-2 text-sm">
+                <hlm-checkbox
+                  class="[&_button]:cursor-pointer!"
+                  [checked]="model().specialties.includes(specialty)"
+                  (checkedChange)="toggleSpecialty(specialty, $event)"
+                />
+                {{ categoryLabels[specialty] }}
+              </label>
+            }
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button hlmBtn type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Save Vendor
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

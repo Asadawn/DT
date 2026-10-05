@@ -1,0 +1,111 @@
+<div class="flex flex-col gap-3">
+  <div class="flex items-start justify-between gap-2">
+    <div class="flex items-center gap-2.5">
+      <span
+        class="bg-dashboard-accent/10 text-dashboard-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+      >
+        <ng-icon name="lucideCamera" size="17" />
+      </span>
+      <div>
+        <h3 class="text-sm">{{ device().name }}</h3>
+        @if (breadcrumb()) {
+          <p class="text-muted-foreground text-xs">{{ breadcrumb() }}</p>
+        }
+      </div>
+    </div>
+    <dt-status-chip [status]="device().connectivity" />
+  </div>
+
+  @if (powerProperty(); as property) {
+    <div
+      class="border-border rounded-control flex items-center justify-between gap-3 border px-3 py-2"
+    >
+      <div>
+        <div class="text-sm font-medium">Power</div>
+        <div class="text-muted-foreground text-xs">{{ isOn() ? 'On' : 'Off' }}</div>
+      </div>
+      <hlm-switch
+        *hasPermission="'devices'; action: 'edit'"
+        [checked]="isOn()"
+        [disabled]="commandService.isPending(device().id, property.id)"
+        aria-label="Power"
+        (checkedChange)="togglePower($event)"
+      />
+    </div>
+  }
+
+  <div
+    class="from-slate-800 to-slate-950 rounded-card relative flex aspect-video w-full max-w-xl items-center justify-center overflow-hidden bg-gradient-to-br"
+  >
+    @if (!isOn()) {
+      <div class="flex flex-col items-center gap-2 text-slate-400">
+        <span class="text-3xl">◎</span>
+        <span class="text-xs font-medium">Camera is off</span>
+      </div>
+    } @else if (selectedClip(); as clip) {
+      <div class="flex flex-col items-center gap-2 text-slate-300">
+        <span class="text-3xl">▶</span>
+        <span class="text-xs font-medium"
+          >{{ clip.at | date: 'MMM d, h:mm a' }} · {{ clip.durationSec }}s</span
+        >
+      </div>
+      <span
+        class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white"
+      >
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span> PLAYBACK
+      </span>
+      <button
+        hlmBtn
+        variant="secondary"
+        size="sm"
+        class="absolute right-2 bottom-2"
+        (click)="backToLive()"
+      >
+        Back to Live
+      </button>
+    } @else {
+      <span class="text-3xl text-slate-300">◎</span>
+      <span
+        class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white"
+      >
+        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500"></span> LIVE
+      </span>
+    }
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <div class="flex items-center justify-between gap-2">
+      <p class="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
+        Recordings
+      </p>
+      <hlm-date-picker [date]="selectedDate()" [maxDate]="today" (dateChange)="setDate($event)">
+        <hlm-date-picker-trigger variant="outline" class="h-7 px-2 text-xs"
+          >Pick a date</hlm-date-picker-trigger
+        >
+      </hlm-date-picker>
+    </div>
+
+    @if (clips().length === 0) {
+      <p class="text-muted-foreground text-xs">No recordings for this date.</p>
+    } @else {
+      <ul class="flex max-h-48 flex-col gap-0.5 overflow-y-auto">
+        @for (clip of clips(); track clip.id) {
+          <li>
+            <button
+              type="button"
+              class="hover:bg-accent rounded-control flex w-full items-center justify-between px-2 py-1.5 text-left"
+              [class.bg-accent]="selectedClip()?.id === clip.id"
+              (click)="playClip(clip)"
+            >
+              <span class="flex items-center gap-2 text-sm">
+                <span class="text-muted-foreground">▶</span>
+                {{ clip.at | date: 'h:mm a' }}
+              </span>
+              <span class="text-muted-foreground text-xs">{{ clip.durationSec }}s</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

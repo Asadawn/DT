@@ -1,0 +1,225 @@
+@if (device(); as device) {
+  <dt-page-header [title]="device.name" [breadcrumb]="breadcrumb()" [icon]="cardIcon()">
+    <span status><dt-status-chip [status]="device.connectivity" /></span>
+  </dt-page-header>
+
+  @if (readOnlyProperties().length > 0) {
+    <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      @for (property of readOnlyProperties(); track property.id) {
+        <dt-kpi-card
+          [label]="property.label"
+          [value]="kpiValue(property)"
+          [unit]="property.unit"
+          [ngIcon]="propertyIcon(property)"
+          [caption]="property.updatedAt ? 'Updated ' + (property.updatedAt | date: 'shortTime') : undefined"
+        />
+      }
+    </div>
+  }
+
+  <div hlmCard class="mb-6">
+    <div hlmCardContent>
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span class="bg-dashboard-accent/15 text-dashboard-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+            <ng-icon name="lucideInfo" size="16" />
+          </span>
+          <div>
+            <h2 class="text-sm font-semibold">Device Overview</h2>
+            <p class="text-muted-foreground text-xs">Current status and basic information</p>
+          </div>
+        </div>
+        <dt-status-chip [status]="device.connectivity" />
+      </div>
+
+      <div class="border-border mt-4 grid grid-cols-1 divide-y rounded-lg border bg-white p-3 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div class="flex items-center gap-2.5 py-4 first:pt-0 sm:px-4 sm:py-0 sm:first:pl-0 sm:last:pr-0">
+          <span class="bg-dashboard-accent/15 text-dashboard-accent flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+            <ng-icon name="lucideHash" size="14" />
+          </span>
+          <div class="min-w-0">
+            <p class="text-muted-foreground text-xs">Device ID</p>
+            <p class="truncate text-sm font-medium">{{ device.id }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2.5 py-4 first:pt-0 sm:px-4 sm:py-0 sm:first:pl-0 sm:last:pr-0">
+          <span class="bg-dashboard-accent/15 text-dashboard-accent flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+            @if (cardIcon(); as icon) {
+              <ng-icon [name]="icon" size="14" />
+            }
+          </span>
+          <div class="min-w-0">
+            <p class="text-muted-foreground text-xs">Category</p>
+            <p class="truncate text-sm font-medium">{{ categoryConfig()?.label }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2.5 py-4 last:pb-0 sm:px-4 sm:py-0 sm:first:pl-0 sm:last:pr-0">
+          <span class="bg-dashboard-accent/15 text-dashboard-accent flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+            <ng-icon name="lucideCalendarClock" size="14" />
+          </span>
+          <div class="min-w-0">
+            <p class="text-muted-foreground text-xs">Last Seen</p>
+            <p class="truncate text-sm font-medium">{{ device.lastSeenAt | date: 'medium' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-border mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3 text-sm">
+        <ng-icon name="lucideMapPin" size="14" class="text-muted-foreground shrink-0" />
+        <span class="text-muted-foreground">Building:</span>
+        <span class="font-medium">{{ building()?.name ?? '—' }}</span>
+        <span class="text-muted-foreground">|</span>
+        <span class="text-muted-foreground">Floor:</span>
+        <span class="font-medium">{{ floor()?.name ?? '—' }}</span>
+        @if (space(); as s) {
+          <span class="text-muted-foreground">|</span>
+          <span class="text-muted-foreground">Space:</span>
+          <span class="font-medium">{{ s.name }}</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (device.capabilities.telemetry) {
+    <dt-section-shell icon="lucideActivity" title="Telemetry" description="Historical readings over the selected time range">
+      @if (device.category !== 'camera') {
+        <div header-action hlmToggleGroup type="single" [value]="rangeId()" (valueChange)="rangeId.set($any($event) ?? '')">
+          @for (segment of rangeSegments; track segment.id) {
+            <button hlmToggleGroupItem [value]="segment.id">{{ segment.label }}</button>
+          }
+        </div>
+      }
+
+      @if (device.category === 'camera') {
+        <dt-camera-panel [device]="device" />
+      } @else {
+        <div class="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+          @for (metric of categoryConfig()?.metrics ?? []; track metric.key) {
+            <dt-device-telemetry-chart
+              [title]="metric.label"
+              [deviceId]="device.id"
+              [metric]="metric.key"
+              [range]="range()"
+              [chartType]="categoryConfig()?.chartType ?? 'line'"
+            />
+          } @empty {
+            <dt-empty-state icon="▥" title="No telemetry metrics for this device type" />
+          }
+        </div>
+      }
+    </dt-section-shell>
+  }
+
+  @if (device.capabilities.commands) {
+    <dt-section-shell icon="lucideToggleLeft" title="Controls" description="Writable properties for this device">
+      <div hlmCard>
+        <div hlmCardContent class="flex flex-col divide-y divide-border">
+          @for (property of device.properties; track property.id) {
+            @if (property.writable && property.valueType === 'boolean') {
+              <div class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div>
+                  <div class="text-sm font-medium">{{ property.label }}</div>
+                  <div class="text-muted-foreground text-xs">
+                    Current: {{ booleanLabel(property) }}
+                  </div>
+                </div>
+                <hlm-switch
+                  *hasPermission="'devices'; action: 'edit'"
+                  [checked]="!!property.value"
+                  [disabled]="commandService.isPending(device.id, property.id)"
+                  [attr.aria-label]="property.label"
+                  (checkedChange)="toggleProperty(property, $event)"
+                />
+              </div>
+              @if (commandService.hasError(device.id, property.id)) {
+                <p class="pb-3 text-xs text-red-600">Command failed and was rolled back. Try again.</p>
+              }
+            } @else if (property.writable && property.valueType === 'number') {
+              <div class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div>
+                  <div class="text-sm font-medium">{{ property.label }}</div>
+                  <div class="text-muted-foreground text-xs">
+                    Current: {{ property.value }}{{ property.unit ? ' ' + property.unit : '' }}
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button
+                    *hasPermission="'devices'; action: 'edit'"
+                    type="button"
+                    class="border-border hover:bg-accent flex h-7 w-7 cursor-pointer items-center justify-center rounded border text-base font-bold leading-none disabled:cursor-not-allowed disabled:opacity-40"
+                    [disabled]="commandService.isPending(device.id, property.id) || atMin(property)"
+                    (click)="stepDown(property)"
+                    [attr.aria-label]="'Decrease ' + property.label"
+                  >−</button>
+                  <span class="w-8 text-center text-sm font-semibold tabular-nums">{{ property.value }}</span>
+                  <button
+                    *hasPermission="'devices'; action: 'edit'"
+                    type="button"
+                    class="border-border hover:bg-accent flex h-7 w-7 cursor-pointer items-center justify-center rounded border text-base font-bold leading-none disabled:cursor-not-allowed disabled:opacity-40"
+                    [disabled]="commandService.isPending(device.id, property.id) || atMax(property)"
+                    (click)="stepUp(property)"
+                    [attr.aria-label]="'Increase ' + property.label"
+                  >+</button>
+                </div>
+              </div>
+              @if (commandService.hasError(device.id, property.id)) {
+                <p class="pb-3 text-xs text-red-600">Command failed and was rolled back. Try again.</p>
+              }
+            }
+          }
+        </div>
+      </div>
+    </dt-section-shell>
+  }
+
+  <dt-section-shell icon="lucideHistory" title="Events" description="Connectivity changes and command history">
+    <div hlmCard>
+      <div hlmCardContent>
+        @if (events().length === 0) {
+          <dt-empty-state icon="◔" title="No events yet" description="Connectivity changes and commands for this device will appear here." />
+        } @else {
+          <ul class="flex flex-col gap-4">
+            @for (event of events(); track event.id) {
+              <li class="flex gap-3">
+                <span class="mt-1.5 flex h-2 w-2 shrink-0 rounded-full" [class]="eventDotClass(event.type)"></span>
+                <div class="min-w-0">
+                  <p class="text-sm">{{ event.message }}</p>
+                  <p class="text-muted-foreground text-xs">{{ event.timestamp | date: 'medium' }}</p>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  </dt-section-shell>
+
+  @if (device.capabilities.scheduling) {
+    <dt-section-shell icon="lucideCalendarClock" title="Schedule" description="Schedules referencing this device">
+      <div hlmCard>
+        <div hlmCardContent>
+          @if (schedulesForDevice().length === 0) {
+            <dt-empty-state icon="◷" title="No schedules for this device" />
+          } @else {
+            <ul class="flex flex-col gap-2">
+              @for (schedule of schedulesForDevice(); track schedule.id) {
+                <li>
+                  <a
+                    [routerLink]="['/operations/schedules', schedule.id]"
+                    class="hover:bg-accent flex items-center justify-between rounded-control px-2 py-1.5"
+                  >
+                    <span class="text-sm">{{ schedule.name }}</span>
+                    <dt-status-chip [status]="schedule.status" />
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </dt-section-shell>
+  }
+
+} @else {
+  <dt-empty-state icon="◈" title="Device not found" />
+}

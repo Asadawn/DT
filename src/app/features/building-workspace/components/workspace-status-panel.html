@@ -1,0 +1,231 @@
+<div hlmCard size="sm">
+  <div hlmCardContent>
+@switch (scopeType()) {
+  @case ('building') {
+    @if (building(); as b) {
+      <div class="flex flex-col gap-5">
+        @if (openMaintenanceCount() > 0 || faultDeviceCount() > 0) {
+          <div class="bg-dashboard-danger/10 ring-dashboard-danger/15 flex gap-2.5 rounded-xl p-3 ring-1">
+            <span class="bg-dashboard-danger/15 text-dashboard-danger-strong flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+              <ng-icon name="lucideAlertTriangle" size="14" />
+            </span>
+            <div>
+              <h3 class="text-dashboard-danger-strong text-xs">Attention</h3>
+              <ul class="text-muted-foreground mt-1 flex flex-col gap-0.5 text-xs">
+                @if (openMaintenanceCount() > 0) {
+                  <li>{{ openMaintenanceCount() }} open maintenance request{{ openMaintenanceCount() === 1 ? '' : 's' }}</li>
+                }
+                @if (faultDeviceCount() > 0) {
+                  <li>{{ faultDeviceCount() }} device{{ faultDeviceCount() === 1 ? '' : 's' }} reporting a fault</li>
+                }
+              </ul>
+            </div>
+          </div>
+        } @else {
+          <p class="text-muted-foreground text-xs">No open issues in this building.</p>
+        }
+
+        <div>
+          <h3 class="text-muted-foreground mb-2 text-[11px] tracking-wider uppercase">Operational Status</h3>
+          <div class="grid grid-cols-2 gap-2.5 text-xs">
+            <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+              <div hlmCardContent>
+                <p class="text-muted-foreground">Devices</p>
+                <p class="mt-0.5 text-lg tabular-nums">{{ deviceCount() }}</p>
+              </div>
+            </div>
+            <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+              <div hlmCardContent>
+                <p class="text-muted-foreground">Online</p>
+                <p class="mt-0.5 text-lg tabular-nums">{{ onlineDeviceCount() }} / {{ deviceCount() }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <app-occupancy-summary [spaces]="spacesForBuildingScope()" scopeLabel="building" />
+        <ng-container [ngTemplateOutlet]="energyCard" />
+
+        <div>
+          <h3 class="text-muted-foreground mb-2 text-[11px] tracking-wider uppercase">Functional Entries</h3>
+          <ul class="flex flex-col gap-1 text-xs">
+            <li>
+              <a [routerLink]="['/devices']" [queryParams]="{ buildingId: b.id }" class="hover:bg-accent flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors">
+                <span class="bg-dashboard-accent/10 text-dashboard-accent flex h-7 w-7 shrink-0 items-center justify-center rounded-lg">
+                  <ng-icon name="lucideCpu" size="14" />
+                </span>
+                <span class="flex-1">Devices</span>
+                <ng-icon name="lucideArrowRight" size="12" class="text-muted-foreground" />
+              </a>
+            </li>
+            <li>
+              <a [routerLink]="['/operations/automations']" class="hover:bg-accent flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors">
+                <span class="bg-dashboard-accent/10 text-dashboard-accent flex h-7 w-7 shrink-0 items-center justify-center rounded-lg">
+                  <ng-icon name="lucideWorkflow" size="14" />
+                </span>
+                <span class="flex-1">Automations</span>
+                <ng-icon name="lucideArrowRight" size="12" class="text-muted-foreground" />
+              </a>
+            </li>
+            <li>
+              <a [routerLink]="['/operations/maintenance']" class="hover:bg-accent flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors">
+                <span class="bg-dashboard-accent/10 text-dashboard-accent flex h-7 w-7 shrink-0 items-center justify-center rounded-lg">
+                  <ng-icon name="lucideWrench" size="14" />
+                </span>
+                <span class="flex-1">Maintenance</span>
+                <ng-icon name="lucideArrowRight" size="12" class="text-muted-foreground" />
+              </a>
+            </li>
+            <li>
+              <a [routerLink]="['/operations/schedules']" class="hover:bg-accent flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors">
+                <span class="bg-dashboard-accent/10 text-dashboard-accent flex h-7 w-7 shrink-0 items-center justify-center rounded-lg">
+                  <ng-icon name="lucideCalendarClock" size="14" />
+                </span>
+                <span class="flex-1">Schedules</span>
+                <ng-icon name="lucideArrowRight" size="12" class="text-muted-foreground" />
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    }
+  }
+  @case ('floor') {
+    @if (floor(); as f) {
+      <div class="flex flex-col gap-5">
+        <div>
+          <h2 class="text-lg tracking-tight">{{ f.name }}</h2>
+          <p class="text-muted-foreground text-xs">{{ deviceCount() }} devices · {{ spacesOnFloor().length }} spaces</p>
+        </div>
+
+        <div>
+          <h3 class="text-muted-foreground mb-2 text-[11px] tracking-wider uppercase">Operational Status</h3>
+          <div class="grid grid-cols-2 gap-2.5 text-xs">
+            <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+              <div hlmCardContent>
+                <p class="text-muted-foreground">Devices</p>
+                <p class="mt-0.5 text-lg tabular-nums">{{ deviceCount() }}</p>
+              </div>
+            </div>
+            <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+              <div hlmCardContent>
+                <p class="text-muted-foreground">Online</p>
+                <p class="mt-0.5 text-lg tabular-nums">{{ onlineDeviceCount() }} / {{ deviceCount() }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <app-occupancy-summary [spaces]="spacesOnFloor()" scopeLabel="floor" />
+        <ng-container [ngTemplateOutlet]="energyCard" />
+
+        <div>
+          <h3 class="text-muted-foreground mb-2 text-[11px] tracking-wider uppercase">Other Devices on This Floor</h3>
+          @if (unassignedFloorDevices().length === 0) {
+            <p class="text-muted-foreground text-xs">No unassigned devices on this floor.</p>
+          } @else {
+            <ul class="flex flex-col gap-0.5 text-xs">
+              @for (device of unassignedFloorDevices(); track device.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="hover:bg-accent flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors"
+                    [title]="device.name + ' — ' + connectivityLabel(device.connectivity)"
+                    (click)="workspace.selectDevice(device.id)"
+                  >
+                    <span
+                      class="h-1.5 w-1.5 shrink-0 rounded-full"
+                      [class.bg-dashboard-accent]="device.connectivity === 'online'"
+                      [class.bg-dashboard-warning]="device.connectivity === 'warning' || device.connectivity === 'stale'"
+                      [class.bg-dashboard-danger]="device.connectivity === 'offline' || device.connectivity === 'error'"
+                    ></span>
+                    <span class="flex-1 truncate">{{ device.name }}</span>
+                    <span class="sr-only">— {{ connectivityLabel(device.connectivity) }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    }
+  }
+  @case ('space') {
+    @if (space(); as s) {
+      <div class="flex flex-col gap-5">
+        <div>
+          <h2 class="text-lg tracking-tight">{{ s.name }}</h2>
+          <p class="text-muted-foreground text-xs">{{ deviceCount() }} devices</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 text-xs">
+          <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+            <div hlmCardContent>
+              <p class="text-muted-foreground">Online</p>
+              <p class="mt-0.5 text-lg tabular-nums">{{ onlineDeviceCount() }}</p>
+            </div>
+          </div>
+          <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+            <div hlmCardContent>
+              <p class="text-muted-foreground">Offline</p>
+              <p class="mt-0.5 text-lg tabular-nums">{{ offlineDeviceCount() }}</p>
+            </div>
+          </div>
+        </div>
+
+        <app-room-occupancy-summary [location]="spaceLocationRef()" [compact]="true" />
+        <app-room-energy-summary [devices]="scopedDevices()" scopeLabel="room" [compact]="true" />
+      </div>
+    }
+  }
+}
+  </div>
+</div>
+
+<ng-template #energyCard>
+  <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+    <div hlmCardContent>
+      <div class="flex items-center justify-between">
+        <h3 class="text-foreground flex items-center gap-1.5 text-xs">
+          <ng-icon name="lucideZap" size="14" />
+          Energy Usage
+        </h3>
+        <a routerLink="/analytics/energy" class="text-dashboard-accent flex items-center gap-0.5 text-xs hover:underline">
+          View Analytics
+          <ng-icon name="lucideArrowRight" size="11" />
+        </a>
+      </div>
+
+      @if (!energyHasData()) {
+        <p class="text-muted-foreground mt-3 text-xs">No metered devices in scope.</p>
+      } @else {
+        <div class="mt-3 flex items-end justify-between gap-4">
+          <div>
+            <div class="flex items-baseline gap-1">
+              <span class="text-2xl tabular-nums">{{ energyTotalKwh() }}</span>
+              <span class="text-muted-foreground text-xs">kWh</span>
+            </div>
+            @if (energyDeltaPercent() !== null) {
+              <div
+                class="mt-0.5 flex items-center gap-0.5 text-xs"
+                [class]="energyDeltaPercent()! <= 0 ? 'text-dashboard-accent' : 'text-dashboard-danger-strong'"
+              >
+                <ng-icon [name]="energyDeltaPercent()! < 0 ? 'lucideArrowDown' : 'lucideArrowUp'" size="11" />
+                {{ energyDeltaPercent()! < 0 ? -energyDeltaPercent()! : energyDeltaPercent() }}%
+                <span class="text-muted-foreground font-normal">vs last week</span>
+              </div>
+            }
+          </div>
+
+          @if (energySparkValues().length > 0) {
+            <div class="flex h-10 w-20 shrink-0 items-end gap-[2px]">
+              @for (point of energySparkValues(); track $index) {
+                <span class="bg-dashboard-accent/60 max-w-[5px] min-w-0 flex-1 rounded-full" [style.height.%]="sparkHeight(point)"></span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</ng-template>

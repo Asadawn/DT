@@ -1,0 +1,38 @@
+<div class="mb-3 flex items-center justify-end">
+  <dt-chart-range-toggle [(rangeId)]="rangeId" />
+</div>
+
+<div class="grid grid-cols-1 items-start gap-3 lg:grid-cols-[280px_1fr]">
+  <dt-chart-card title="Air Quality Index">
+    @if (currentAqi(); as value) {
+      <div class="flex h-full flex-col items-center justify-center gap-2 py-2">
+        <dt-gauge [value]="value" [min]="0" [max]="150" [color]="band()!.color" />
+        <span class="text-sm font-medium" [style.color]="band()!.color">{{ band()!.label }}</span>
+        <span class="text-muted-foreground text-xs">Trend: {{ trend() }}</span>
+      </div>
+    } @else {
+      <div class="text-muted-foreground flex h-full items-center justify-center py-4 text-sm">No AQI sensors in scope.</div>
+    }
+  </dt-chart-card>
+
+  <div class="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+    <dt-chart-card title="IAQ Index" [loading]="isLoading()" [noData]="!isLoading() && iaq().series.length === 0">
+      <dt-multi-series-chart [labels]="iaq().labels" [series]="iaq().series" unit="" />
+    </dt-chart-card>
+    <dt-chart-card title="TVOC" [loading]="isLoading()" [noData]="!isLoading() && tvoc().series.length === 0">
+      <dt-multi-series-chart [labels]="tvoc().labels" [series]="tvoc().series" unit="ppb" />
+    </dt-chart-card>
+    <dt-chart-card title="eCO2" [loading]="isLoading()" [noData]="!isLoading() && eco2().series.length === 0">
+      <dt-multi-series-chart [labels]="eco2().labels" [series]="eco2().series" unit="ppm" />
+    </dt-chart-card>
+    <dt-chart-card title="PM 1.0" [loading]="isLoading()" [noData]="!isLoading() && pm1().series.length === 0">
+      <dt-multi-series-chart [labels]="pm1().labels" [series]="pm1().series" unit="µg/m³" />
+    </dt-chart-card>
+    <dt-chart-card title="PM 2.5" [loading]="isLoading()" [noData]="!isLoading() && pm25().series.length === 0">
+      <dt-multi-series-chart [labels]="pm25().labels" [series]="pm25().series" unit="µg/m³" />
+    </dt-chart-card>
+    <dt-chart-card title="PM 10" [loading]="isLoading()" [noData]="!isLoading() && pm10().series.length === 0">
+      <dt-multi-series-chart [labels]="pm10().labels" [series]="pm10().series" unit="µg/m³" />
+    </dt-chart-card>
+  </div>
+</div>

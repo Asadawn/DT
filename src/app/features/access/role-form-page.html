@@ -1,0 +1,59 @@
+<div class="mx-auto mt-6 max-w-4xl">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-6">
+      <a routerLink="/access/roles" class="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1 text-sm">
+        <ng-icon name="lucideChevronLeft" size="16" />
+        Back to Roles
+      </a>
+
+      <h1 class="text-foreground text-center text-2xl font-semibold">{{ roleId() ? 'Edit Role' : 'New Role' }}</h1>
+
+      <form class="flex flex-col gap-5" novalidate (submit)="$event.preventDefault(); onSubmit()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="roleForm.name"
+              [forceInvalid]="submitAttempted() && !roleForm.name().valid()"
+              placeholder="Enter name"
+            />
+            @if ((roleForm.name().touched() || submitAttempted()) && !roleForm.name().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ roleForm.name().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Description</span>
+            <input hlmInput [formField]="roleForm.description" placeholder="Enter description" />
+          </label>
+        </div>
+
+        <dt-data-table [columns]="matrixColumns" [rows]="matrixRows" [pageSize]="matrixRows.length">
+          <ng-template dtCell="resource" let-row>
+            {{ row.label }}
+          </ng-template>
+          @for (action of actions; track action) {
+            <ng-template [dtCell]="action" let-row>
+              <div class="flex justify-center">
+                <hlm-checkbox
+                  class="[&_button]:cursor-pointer!"
+                  [checked]="isChecked(row.resource, action)"
+                  (checkedChange)="toggle(row.resource, action, $event)"
+                />
+              </div>
+            </ng-template>
+          }
+        </dt-data-table>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button hlmBtn type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Save Role
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

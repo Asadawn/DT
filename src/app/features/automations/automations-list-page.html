@@ -1,0 +1,66 @@
+<dt-page-header title="Automations" description="Trigger, conditions, actions and schedule">
+  <div actions>
+    <a *hasPermission="'automations'; action: 'create'" hlmBtn [routerLink]="['/operations/automations/new']">New Automation</a>
+  </div>
+</dt-page-header>
+
+<div hlmCard size="sm" class="mb-3">
+  <div hlmCardContent>
+    <dt-filter-bar [activeFilterCount]="activeFilterCount()" class="block">
+      <dt-search-input primary placeholder="Search automations…" [value]="search()" (valueChange)="search.set($event)" />
+      <hlm-select inline [value]="status()" [itemToString]="statusLabel" (valueChange)="status.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All statuses" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of statusOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="buildingId()" [itemToString]="buildingLabel" (valueChange)="buildingId.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All buildings" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of buildingOptions(); track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <button
+        inline
+        type="button"
+        class="text-muted-foreground hover:text-foreground ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!hasActiveFilters()"
+        (click)="resetFilters()"
+      >
+        <ng-icon name="lucideRotateCcw" size="14" />
+        Reset
+      </button>
+    </dt-filter-bar>
+  </div>
+</div>
+
+<dt-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [loading]="loading()"
+  emptyTitle="No automations match these filters"
+  (rowClick)="openAutomation($event)"
+>
+  <ng-template dtCell="status" let-row>
+    <div class="flex items-center gap-2">
+      <dt-status-chip [status]="row.status" />
+      <button
+        *hasPermission="'automations'; action: 'edit'"
+        hlmBtn
+        variant="ghost"
+        size="xs"
+        [disabled]="togglingId() === row.id"
+        (click)="toggleStatus(row, $event)"
+      >
+        {{ row.status === 'enabled' ? 'Disable' : 'Enable' }}
+      </button>
+    </div>
+  </ng-template>
+  <ng-template dtCell="updated" let-row>
+    {{ row.updatedAt | date: 'short' }}
+  </ng-template>
+</dt-data-table>

@@ -1,0 +1,13 @@
+$dt-bp-small-mobile: 360px;
+$dt-bp-mobile: 480px;
+$dt-bp-tablet: 768px;
+$dt-bp-small-desktop: 1024px;
+$dt-bp-desktop: 1280px;
+$dt-bp-large-desktop: 1440px;
+$dt-bp-ultra-wide: 1920px;
+
+@mixin dt-respond-up($breakpoint) {
+  @media (min-width: $breakpoint) {
+    @content;
+  }
+}

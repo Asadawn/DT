@@ -1,0 +1,52 @@
+@if (vendor(); as vendor) {
+  <dt-page-header
+    [title]="vendor.name"
+    [breadcrumb]="[{ label: 'Vendors', link: '/operations/vendors' }]"
+    [description]="vendor.contactName + ' · ' + vendor.contactEmail + ' · ' + vendor.contactPhone"
+  >
+    <div actions class="flex items-center gap-2">
+      <dt-status-chip [status]="vendor.status" />
+      <a *hasPermission="'vendors'; action: 'edit'" hlmBtn variant="secondary" [routerLink]="['/operations/vendors', vendor.id, 'edit']">Edit</a>
+      <a hlmBtn [routerLink]="['/vendor-portal', vendor.id]">View Technician Portal</a>
+    </div>
+  </dt-page-header>
+
+  <div class="mb-4 flex flex-wrap gap-1">
+    @for (specialty of vendor.specialties; track specialty) {
+      <span class="bg-muted rounded-control px-1.5 py-0.5 text-xs">{{ categoryLabels[specialty] }}</span>
+    }
+  </div>
+
+  <section class="rounded-card border-border border bg-white p-4">
+    <h2 class="mb-3 text-sm font-medium">Invitations</h2>
+    @if (invitations().length === 0) {
+      <dt-empty-state icon="🤝" title="No invitations yet" description="This vendor hasn't been invited to quote on a maintenance request." />
+    } @else {
+      <ul class="flex flex-col gap-3">
+        @for (invitation of invitations(); track invitation.id) {
+          <li class="border-border rounded-control border p-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <a [routerLink]="['/operations/maintenance', invitation.maintenanceId]" class="text-sm font-medium hover:underline">
+                {{ maintenanceTitle(invitation.maintenanceId) }}
+              </a>
+              <div class="flex items-center gap-2">
+                <dt-status-chip [status]="invitation.status" />
+                @if (invitation.jobStatus) {
+                  <dt-status-chip [status]="invitation.jobStatus" />
+                }
+              </div>
+            </div>
+            <p class="text-muted-foreground mt-1 text-xs">Invited {{ invitation.invitedAt | date: 'medium' }}</p>
+            @if (invitation.quotation; as quotation) {
+              <p class="mt-1 text-xs">
+                Quoted ${{ quotation.laborCost + quotation.materialCost }} · {{ quotation.arrivalWindow }} · {{ quotation.durationHours }}h
+              </p>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+} @else {
+  <dt-empty-state icon="🤝" title="Vendor not found" />
+}

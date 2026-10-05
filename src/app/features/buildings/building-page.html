@@ -1,0 +1,346 @@
+@if (building(); as b) {
+  <dt-page-header
+    [title]="b.name"
+    [description]="b.address"
+    [breadcrumb]="[{ label: 'Buildings', link: '/buildings' }]"
+  >
+    <div actions class="flex flex-wrap items-center gap-2">
+      <hlm-select
+        [value]="b.id"
+        [itemToString]="buildingLabel"
+        (valueChange)="switchBuilding($event ?? '')"
+      >
+        <hlm-select-trigger class="w-40 sm:w-48"><hlm-select-value /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of buildingOptions(); track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      @if (emergencyTriggered()) {
+        <span class="text-xs font-medium text-red-600">Emergency alert sent</span>
+      }
+      <button
+        type="button"
+        class="flex h-9 w-9 items-center justify-center rounded-control border border-red-200 hover:bg-red-50"
+        aria-label="Emergency"
+        (click)="emergencyDialogOpen.set(true)"
+      >
+        <img src="/assets/icons/emergency.png" alt="" class="h-5 w-5" />
+      </button>
+    </div>
+  </dt-page-header>
+
+  <div class="flex flex-col gap-4">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <dt-kpi-card label="Floors" [value]="floors().length" icon="▤" />
+      <dt-kpi-card label="Devices" [value]="devices().length" icon="◈" />
+      <dt-kpi-card label="Maintenance" [value]="maintenanceRequests().length" icon="✎" />
+      <dt-kpi-card
+        label="Energy Today"
+        [value]="energyTodayKwh().toFixed(0)"
+        unit="kWh"
+        icon="⚡"
+      />
+      <dt-kpi-card
+        label="Active Power"
+        [value]="activePowerNowKw().toFixed(1)"
+        unit="kW"
+        icon="⚡"
+      />
+      <dt-kpi-card label="Meters Online" [value]="metersOnline()" icon="◫" />
+    </div>
+
+    <dt-status-summary title="Device Health" [items]="connectivitySummary()" />
+
+    <app-occupancy-summary [spaces]="spaces()" scopeLabel="building" />
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class="rounded-control flex items-center gap-2 border px-3 py-1.5 text-sm"
+        [class]="
+          viewMode() === 'ground'
+            ? 'border-primary bg-primary/5 text-primary'
+            : 'border-border hover:bg-accent'
+        "
+        (click)="setViewMode('ground')"
+      >
+        <img src="/assets/icons/total-building.svg" alt="" class="h-4 w-4" />
+        Ground Floor
+      </button>
+      <button
+        type="button"
+        class="rounded-control flex items-center gap-2 border px-3 py-1.5 text-sm"
+        [class]="
+          viewMode() === 'floor'
+            ? 'border-primary bg-primary/5 text-primary'
+            : 'border-border hover:bg-accent'
+        "
+        (click)="setViewMode('floor')"
+      >
+        <img src="/assets/icons/total-floor.svg" alt="" class="h-4 w-4" />
+        Floor Plan
+      </button>
+      <button
+        type="button"
+        class="rounded-control flex items-center gap-2 border px-3 py-1.5 text-sm"
+        [class]="
+          viewMode() === 'control'
+            ? 'border-primary bg-primary/5 text-primary'
+            : 'border-border hover:bg-accent'
+        "
+        (click)="setViewMode('control')"
+      >
+        <img
+          [src]="
+            viewMode() === 'control'
+              ? '/assets/icons/control-active.svg'
+              : '/assets/icons/control-green.svg'
+          "
+          alt=""
+          class="h-4 w-4"
+        />
+        Control
+      </button>
+    </div>
+
+    @if (viewMode() !== 'control') {
+      <div class="rounded-card border-border relative h-[60vh] overflow-hidden border bg-white">
+        @if (!modelLoaded()) {
+          <div class="absolute inset-0"><dt-skeleton /></div>
+        }
+        @if (viewMode() === 'ground') {
+          <dt-model-viewer
+            [src]="groundModelUrl"
+            [hoverMaterialPattern]="roofMaterialPattern"
+            [hoverMinNormalY]="roofMinNormalY"
+            alt="Building ground floor 3D model"
+            (loaded)="modelLoaded.set(true)"
+            (modelClicked)="onGroundModelClicked($event)"
+          />
+        } @else if (viewMode() === 'room') {
+          <button
+            type="button"
+            class="rounded-control border-border hover:bg-accent absolute top-2 left-2 z-10 flex items-center gap-1.5 border bg-white px-3 py-1.5 text-sm shadow-sm cursor-pointer"
+            (click)="setViewMode(roomEntryMode())"
+          >
+            ← Back to Floor Plan
+          </button>
+          <dt-model-viewer
+            [src]="roomModelUrl"
+            [cameraOrbit]="roomCameraOrbit"
+            [cameraTarget]="roomCameraTarget"
+            [minCameraOrbit]="roomMinCameraOrbit"
+            [maxCameraOrbit]="roomMaxCameraOrbit"
+            alt="Room 3D model"
+            (loaded)="modelLoaded.set(true)"
+          />
+        } @else {
+          <dt-model-viewer
+            [src]="floorModelUrl"
+            [cameraOrbit]="floorCameraOrbit()"
+            [hoverRegionTest]="endRoomHoverTest"
+            alt="Building floor plan 3D model"
+            (loaded)="modelLoaded.set(true)"
+            (modelClicked)="onFloorModelClicked($event)"
+          />
+        }
+      </div>
+    }
+
+    @if (viewMode() === 'control') {
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+        <section class="rounded-card border-border border bg-white p-4">
+          <h2 class="mb-3 flex items-center gap-2 text-sm font-medium">
+            <ng-icon name="lucideCpu" size="16" class="text-muted-foreground" />
+            Devices
+          </h2>
+          @if (devices().length === 0) {
+            <dt-empty-state icon="◈" title="No devices in this building" />
+          } @else {
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+              @for (device of devices(); track device.id) {
+                <dt-device-control-tile [device]="device" (opened)="openDevice(device)" />
+              }
+            </div>
+          }
+        </section>
+
+        <section class="rounded-card border-border border bg-white p-4">
+          <h2 class="mb-3 flex items-center gap-2 text-sm font-medium">
+            <ng-icon name="lucideLayoutGrid" size="16" class="text-muted-foreground" />
+            Manage Spaces
+          </h2>
+          <dt-search-input
+            placeholder="Search spaces…"
+            [value]="spaceSearch()"
+            (valueChange)="spaceSearch.set($event)"
+            class="mb-3 block"
+          />
+          @if (filteredFloors().length === 0) {
+            <dt-empty-state icon="▤" title="No spaces found" />
+          } @else {
+            <div class="flex flex-col gap-3">
+              @for (entry of filteredFloors(); track entry.floor.id) {
+                <div>
+                  <div class="text-muted-foreground mb-1 text-xs font-medium uppercase">
+                    {{ entry.floor.name }}
+                  </div>
+                  <ul class="flex flex-col gap-1">
+                    @for (space of entry.spaces; track space.id) {
+                      <li>
+                        <a
+                          [routerLink]="[
+                            '/buildings',
+                            b.id,
+                            'floors',
+                            entry.floor.id,
+                            'spaces',
+                            space.id,
+                          ]"
+                          class="hover:bg-accent flex items-center justify-between rounded-control px-2 py-1.5 text-sm"
+                        >
+                          <span>{{ space.name }}</span>
+                          <span class="text-muted-foreground text-xs">{{ space.kind }}</span>
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    }
+
+    @if (sensorTiles().length > 0) {
+      <section>
+        <h2 class="mb-3 flex items-center gap-2 text-sm font-medium">
+          <ng-icon name="lucideRadio" size="16" class="text-muted-foreground" />
+          Live Sensors
+        </h2>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          @for (tile of sensorTiles(); track tile.device.id + tile.metricKey) {
+            <dt-device-sensor-tile
+              [device]="tile.device"
+              [metricKey]="tile.metricKey"
+              (opened)="openSensor(tile)"
+            />
+          }
+        </div>
+      </section>
+    }
+
+    <div class="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[380px_1fr]">
+      @if (weather.value(); as snapshot) {
+        <dt-weather-widget [snapshot]="snapshot" [city]="b.city" />
+      } @else if (weather.isLoading()) {
+        <div class="h-48"><dt-skeleton /></div>
+      }
+
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="mb-3 flex items-center gap-2 text-sm font-medium">
+          <ng-icon name="lucideClock" size="16" class="text-muted-foreground" />
+          Recent Activity
+        </h2>
+        @if (activityFeed().length === 0) {
+          <dt-empty-state icon="◔" title="No recent activity" />
+        } @else {
+          <div class="max-h-52 overflow-y-auto pr-1">
+            <dt-timeline [entries]="activityFeed()" />
+          </div>
+        }
+      </section>
+    </div>
+
+    <section class="rounded-card border-border border bg-white p-4">
+      <h2 class="mb-3 flex items-center gap-2 text-sm font-medium">
+        <ng-icon name="lucideLayers" size="16" class="text-muted-foreground" />
+        Floors
+      </h2>
+      @if (floors().length === 0) {
+        <dt-empty-state icon="▤" title="No floors" />
+      } @else {
+        <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          @for (floor of floors(); track floor.id) {
+            <li>
+              <a
+                [routerLink]="['/buildings', b.id, 'floors', floor.id]"
+                class="hover:border-merik/40 hover:bg-merik/5 rounded-control border-border block border px-3 py-2 text-sm transition-colors"
+              >
+                {{ floor.name }}
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="rounded-card border-border border bg-white p-4">
+      <h2 class="mb-3 flex items-center gap-2 text-sm font-medium">
+        <ng-icon name="lucideWrench" size="16" class="text-muted-foreground" />
+        Maintenance
+      </h2>
+      @if (maintenanceRequests().length === 0) {
+        <dt-empty-state icon="✓" title="No open requests" />
+      } @else {
+        <ul class="flex flex-col gap-2">
+          @for (request of maintenanceRequests(); track request.id) {
+            <li>
+              <a
+                [routerLink]="['/operations/maintenance', request.id]"
+                class="hover:bg-accent flex items-center justify-between gap-2 rounded-control px-2 py-1.5"
+              >
+                <span class="truncate text-sm">{{ request.title }}</span>
+                <dt-status-chip [status]="request.status" />
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+
+  <hlm-dialog [state]="selectedSensor() ? 'open' : 'closed'" (closed)="selectedSensor.set(null)">
+    <ng-template hlmDialogPortal>
+      <hlm-dialog-content class="w-[32rem] max-w-[calc(100%-2rem)] sm:max-w-[32rem]">
+        <hlm-dialog-header>
+          <h3 hlmDialogTitle>{{ selectedSensor()?.device?.name }}</h3>
+        </hlm-dialog-header>
+        @if (selectedSensor(); as tile) {
+          <dt-device-telemetry-chart
+            [deviceId]="tile.device.id"
+            [metric]="tile.metricKey"
+            [range]="sensorRange"
+          />
+        }
+      </hlm-dialog-content>
+    </ng-template>
+  </hlm-dialog>
+
+  <hlm-alert-dialog
+    [state]="emergencyDialogOpen() ? 'open' : 'closed'"
+    (closed)="emergencyDialogOpen.set(false)"
+  >
+    <ng-template hlmAlertDialogPortal>
+      <hlm-alert-dialog-content>
+        <hlm-alert-dialog-header>
+          <h3 hlmAlertDialogTitle>Trigger emergency alert?</h3>
+          <p hlmAlertDialogDescription>
+            This notifies building staff and marks an active emergency for this building.
+          </p>
+        </hlm-alert-dialog-header>
+        <hlm-alert-dialog-footer>
+          <button hlmAlertDialogCancel>Cancel</button>
+          <button hlmAlertDialogAction variant="destructive" (click)="confirmEmergency()">
+            Trigger Alert
+          </button>
+        </hlm-alert-dialog-footer>
+      </hlm-alert-dialog-content>
+    </ng-template>
+  </hlm-alert-dialog>
+} @else {
+  <dt-empty-state icon="⌂" title="Building not found" />
+}

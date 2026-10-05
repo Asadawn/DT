@@ -1,0 +1,11 @@
+<dt-page-header title="Schedules" description="Device schedules across the portfolio">
+  <div actions>
+    <a hlmBtn [routerLink]="['/operations/schedules/new']">New Schedule</a>
+  </div>
+</dt-page-header>
+
+<dt-data-table [columns]="columns" [rows]="rows()" [loading]="loading()" emptyTitle="No schedules" (rowClick)="openSchedule($event)">
+  <ng-template dtCell="status" let-row>
+    <dt-status-chip [status]="row.status" />
+  </ng-template>
+</dt-data-table>

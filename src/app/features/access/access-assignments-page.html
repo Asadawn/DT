@@ -1,0 +1,54 @@
+<dt-page-header title="Temporary Access" description="Scoped, time-boxed access grants">
+  <div actions>
+    <a *hasPermission="'access-assignments'; action: 'create'" hlmBtn [routerLink]="['/operations/access-assignments/new']">New Assignment</a>
+  </div>
+</dt-page-header>
+
+<div hlmCard size="sm" class="mb-3">
+  <div hlmCardContent>
+    <dt-filter-bar [activeFilterCount]="activeFilterCount()" class="block">
+      <dt-search-input primary placeholder="Search by principal or purpose…" [value]="search()" (valueChange)="search.set($event)" />
+      <hlm-select inline [value]="status()" [itemToString]="statusLabel" (valueChange)="status.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All statuses" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of statusOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="buildingId()" [itemToString]="buildingLabel" (valueChange)="buildingId.set($event ?? '')">
+        <hlm-select-trigger class="w-44"><hlm-select-value placeholder="All buildings" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of buildingOptions(); track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <button
+        inline
+        type="button"
+        class="text-muted-foreground hover:text-foreground ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!hasActiveFilters()"
+        (click)="resetFilters()"
+      >
+        <ng-icon name="lucideRotateCcw" size="14" />
+        Reset
+      </button>
+    </dt-filter-bar>
+  </div>
+</div>
+
+<dt-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [loading]="loading()"
+  emptyTitle="No access assignments match these filters"
+  (rowClick)="openAssignment($event)"
+>
+  <ng-template dtCell="status" let-row>
+    <dt-status-chip [status]="statusOf(row)" />
+  </ng-template>
+  <ng-template dtCell="validUntil" let-row>
+    {{ row.validUntil | date: 'short' }}
+  </ng-template>
+</dt-data-table>

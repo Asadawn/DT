@@ -1,0 +1,101 @@
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronDown } from '@ng-icons/lucide';
+import {
+  type BrnDatePickerTriggerBase,
+  injectBrnDatePicker,
+  provideBrnDatePickerTrigger,
+} from '@spartan-ng/brain/date-picker';
+import { BrnFieldControl, BrnFieldControlDescribedBy } from '@spartan-ng/brain/field';
+import { ButtonVariants, HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmPopoverTrigger } from '@spartan-ng/helm/popover';
+import { hlm } from '@spartan-ng/helm/utils';
+import { ClassValue } from 'clsx';
+
+@Component({
+  selector: 'hlm-date-picker-trigger',
+  imports: [HlmButtonImports, HlmPopoverTrigger, NgIcon, BrnFieldControlDescribedBy],
+  providers: [
+    provideIcons({ lucideChevronDown }),
+    provideBrnDatePickerTrigger(HlmDatePickerTrigger),
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { 'data-slot': 'date-picker-trigger' },
+  template: `
+    <button
+      [id]="buttonId()"
+      type="button"
+      [class]="_computedClass()"
+      [disabled]="_disabled()"
+      [attr.aria-invalid]="_ariaInvalid()"
+      [attr.data-invalid]="_ariaInvalid()"
+      [attr.data-touched]="_touched?.() ? 'true' : null"
+      [attr.data-dirty]="_dirty?.() ? 'true' : null"
+      [attr.data-matches-spartan-invalid]="_spartanInvalid() ? 'true' : null"
+      hlmBtn
+      [variant]="variant()"
+      hlmPopoverTrigger
+      [hlmPopoverTriggerFor]="_popover()"
+      brnFieldControlDescribedBy
+      [attr.data-placeholder]="_isPlaceholder() ? '' : null"
+    >
+      <span class="truncate">
+        @if (_formattedDate(); as formattedDate) {
+          {{ formattedDate }}
+        } @else {
+          <ng-content />
+        }
+      </span>
+
+      @if (showTrigger()) {
+        <ng-icon name="lucideChevronDown" />
+      }
+    </button>
+  `,
+})
+export class HlmDatePickerTrigger implements BrnDatePickerTriggerBase {
+  private static _nextId = 0;
+
+  private readonly _fieldControl = inject(BrnFieldControl, { optional: true });
+  private readonly _datePicker = injectBrnDatePicker();
+
+  private readonly _invalid = this._fieldControl?.invalid;
+  protected readonly _spartanInvalid = computed(
+    () => this.forceInvalid() || this._fieldControl?.spartanInvalid(),
+  );
+  protected readonly _dirty = this._fieldControl?.dirty;
+  protected readonly _touched = this._fieldControl?.touched;
+
+  protected readonly _ariaInvalid = computed(() => (this._invalid?.() ? 'true' : null));
+
+  public readonly userClass = input<ClassValue>('', { alias: 'class' });
+  protected readonly _computedClass = computed(() =>
+    hlm('data-placeholder:text-muted-foreground justify-between', this.userClass()),
+  );
+
+  protected readonly _isPlaceholder = computed(() => !this._datePicker.hasDate());
+
+  public readonly buttonId = input<string>(`hlm-date-picker-${++HlmDatePickerTrigger._nextId}`);
+
+  public readonly triggerId = this.buttonId;
+
+  public readonly forceInvalid = input<boolean, BooleanInput>(false, {
+    transform: booleanAttribute,
+  });
+
+  public readonly variant = input<ButtonVariants['variant']>('outline');
+
+  public readonly showTrigger = input<boolean, BooleanInput>(true, { transform: booleanAttribute });
+
+  protected readonly _popover = this._datePicker.popover;
+  protected readonly _disabled = this._datePicker.disabledState;
+  protected readonly _formattedDate = this._datePicker.formattedDate;
+}

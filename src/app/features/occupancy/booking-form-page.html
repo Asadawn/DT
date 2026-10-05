@@ -1,0 +1,118 @@
+<div class="mx-auto mt-6 max-w-3xl">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-6">
+      <a routerLink="/operations/occupancy" class="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1 text-sm">
+        <ng-icon name="lucideChevronLeft" size="16" />
+        Back to Occupancy
+      </a>
+
+      <h1 class="text-foreground text-center text-2xl font-semibold">{{ isEditMode() ? 'Edit Booking' : 'New Booking' }}</h1>
+
+      <form class="flex flex-col gap-5" novalidate (submit)="$event.preventDefault(); onSubmit()">
+        @if (errorMessage()) {
+          <p class="rounded-control bg-red-50 px-3 py-2 text-xs text-red-700">{{ errorMessage() }}</p>
+        }
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Guest name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="bookingForm.guestName"
+              [forceInvalid]="submitAttempted() && !bookingForm.guestName().valid()"
+              placeholder="Enter guest name"
+            />
+            @if ((bookingForm.guestName().touched() || submitAttempted()) && !bookingForm.guestName().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ bookingForm.guestName().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Number of guests (optional)</span>
+            <input hlmInput type="number" [formField]="bookingForm.numberOfGuests" placeholder="Enter number of guests" />
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Building <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().buildingId" [itemToString]="buildingLabel" (valueChange)="model.update(m => ({...m, buildingId: $event ?? '', floorId: '', spaceId: ''}))">
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(bookingForm.buildingId().touched() || submitAttempted()) && !bookingForm.buildingId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select building" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of buildingOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((bookingForm.buildingId().touched() || submitAttempted()) && !bookingForm.buildingId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ bookingForm.buildingId().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Floor</span>
+            <hlm-select [value]="model().floorId" [itemToString]="floorLabel" (valueChange)="model.update(m => ({...m, floorId: $event ?? '', spaceId: ''}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Any floor" /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of floorOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Space <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().spaceId" [itemToString]="spaceLabel" (valueChange)="model.update(m => ({...m, spaceId: $event ?? ''}))">
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(bookingForm.spaceId().touched() || submitAttempted()) && !bookingForm.spaceId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select space" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of spaceOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((bookingForm.spaceId().touched() || submitAttempted()) && !bookingForm.spaceId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ bookingForm.spaceId().errors()[0]?.message }}</span>
+            }
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Check-in date <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-date-picker [date]="isoToDate(model().checkInDate)" (dateChange)="setCheckInDate($event)">
+              <hlm-date-picker-input placeholder="Select check-in date" />
+            </hlm-date-picker>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Check-out date <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-date-picker [date]="isoToDate(model().checkOutDate)" (dateChange)="setCheckOutDate($event)">
+              <hlm-date-picker-input placeholder="Select check-out date" />
+            </hlm-date-picker>
+          </label>
+        </div>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Notes (optional)</span>
+          <textarea hlmInput [formField]="bookingForm.notes" rows="3" placeholder="Anything the front desk should know…" class="min-h-20 py-2"></textarea>
+        </label>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button hlmBtn type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            {{ isEditMode() ? 'Save Changes' : 'Create Booking' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

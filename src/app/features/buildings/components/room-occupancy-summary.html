@@ -1,0 +1,102 @@
+@if (compact()) {
+  <div hlmCard size="sm" class="h-full">
+    <div hlmCardContent>
+      <div class="mb-3 flex items-center gap-2">
+        <span class="bg-dashboard-accent/10 text-dashboard-accent flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+          <ng-icon name="lucideUsers" size="14" />
+        </span>
+        <h3 class="text-xs font-medium">Current Status</h3>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="h-2 w-2 shrink-0 rounded-full" [class]="dotColorClass()"></span>
+        <p class="text-sm font-semibold">{{ statusLabel(reading().status) }}</p>
+      </div>
+
+      @if (reading().guestName; as name) {
+        <div class="mt-2 flex items-center gap-2">
+          <hlm-avatar size="sm" class="shrink-0">
+            <span hlmAvatarFallback class="bg-merik/10 text-merik text-[10px]">{{ initials(name) }}</span>
+          </hlm-avatar>
+          <span class="truncate text-xs font-medium">{{ name }}</span>
+        </div>
+      }
+
+      <p class="text-muted-foreground mt-2 text-xs">
+        @if (reading().status !== 'vacant') {
+          Since {{ reading().lastUpdatedAt | date: 'MMM d, y' }} • {{ reading().lastUpdatedAt | date: 'shortTime' }}
+        } @else {
+          No current or upcoming booking for this room.
+        }
+      </p>
+
+      <div *hasPermission="'bookings'; action: 'edit'" [class]="canAct() ? 'mt-3 border-t border-border pt-3' : ''">
+        @if (reading().status === 'reserved') {
+          <button
+            hlmBtn
+            variant="outline"
+            size="sm"
+            class="w-full rounded-full"
+            [disabled]="bookingService.isPending(reading().bookingId!)"
+            (click)="checkIn()"
+          >
+            Check In
+          </button>
+        }
+        @if (reading().status === 'occupied') {
+          <button
+            hlmBtn
+            variant="outline"
+            size="sm"
+            class="w-full rounded-full"
+            [disabled]="bookingService.isPending(reading().bookingId!)"
+            (click)="checkOut()"
+          >
+            Check Out
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <app-room-stat-card icon="lucideUsers" label="Current Status">
+    <div header-action *hasPermission="'bookings'; action: 'edit'">
+      @if (reading().status === 'reserved') {
+        <button
+          hlmBtn
+          variant="outline"
+          size="sm"
+          class="rounded-full"
+          [disabled]="bookingService.isPending(reading().bookingId!)"
+          (click)="checkIn()"
+        >
+          Check In
+        </button>
+      }
+      @if (reading().status === 'occupied') {
+        <button
+          hlmBtn
+          variant="outline"
+          size="sm"
+          class="rounded-full"
+          [disabled]="bookingService.isPending(reading().bookingId!)"
+          (click)="checkOut()"
+        >
+          Check Out
+        </button>
+      }
+    </div>
+
+    <p class="flex items-center gap-1.5 text-sm font-semibold">
+      <span class="h-1.5 w-1.5 shrink-0 rounded-full" [class]="dotColorClass()"></span>
+      {{ statusLabel(reading().status) }}
+    </p>
+    <p class="text-muted-foreground mt-1 text-xs">
+      @if (reading().status !== 'vacant') {
+        Since {{ reading().lastUpdatedAt | date: 'MMM d, y' }} • {{ reading().lastUpdatedAt | date: 'shortTime' }}
+      } @else {
+        No current or upcoming booking for this room.
+      }
+    </p>
+  </app-room-stat-card>
+}

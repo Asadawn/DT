@@ -1,0 +1,81 @@
+<dt-page-header title="Devices" description="All devices across the portfolio" />
+
+<div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <dt-kpi-card label="Total Devices" [value]="kpiTotal()" ngIcon="lucideCpu" [delta]="2" deltaLabel="vs last 7 days" />
+  <dt-kpi-card label="Online" [value]="kpiOnline()" ngIcon="lucideWifi" [delta]="kpiOnlinePercent()" deltaLabel="of total devices" />
+  <dt-kpi-card
+    label="Offline"
+    [value]="kpiOffline()"
+    ngIcon="lucideWifiOff"
+    tone="muted"
+    [delta]="kpiOfflinePercent()"
+    deltaLabel="of total devices"
+    deltaGood="down"
+  />
+  <dt-kpi-card
+    label="Needs Attention"
+    [value]="kpiNeedsAttention()"
+    ngIcon="lucideAlertTriangle"
+    tone="warning"
+    [delta]="kpiNeedsAttentionPercent()"
+    deltaLabel="of total devices"
+    deltaGood="down"
+  />
+</div>
+
+<div hlmCard size="sm" class="mb-3">
+  <div hlmCardContent>
+    <dt-filter-bar [activeFilterCount]="activeFilterCount()" class="block">
+      <dt-search-input primary placeholder="Search devices…" [value]="search()" (valueChange)="search.set($event)" />
+      <hlm-select inline [value]="buildingId()" [itemToString]="buildingLabel" (valueChange)="buildingId.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All buildings" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of buildingOptions(); track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="category()" [itemToString]="categoryLabel" (valueChange)="category.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All types" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of categoryOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="connectivity()" [itemToString]="connectivityLabel" (valueChange)="connectivity.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All statuses" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of connectivityOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <button
+        inline
+        type="button"
+        class="text-muted-foreground hover:text-foreground ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!hasActiveFilters()"
+        (click)="resetFilters()"
+      >
+        <ng-icon name="lucideRotateCcw" size="14" />
+        Reset
+      </button>
+    </dt-filter-bar>
+  </div>
+</div>
+
+<dt-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [loading]="loading()"
+  emptyTitle="No devices match these filters"
+  (rowClick)="openDevice($event)"
+>
+  <ng-template dtCell="status" let-row>
+    <dt-status-chip [status]="row.connectivity" />
+  </ng-template>
+  <ng-template dtCell="lastSeen" let-row>
+    {{ row.lastSeenAt | date: 'short' }}
+  </ng-template>
+</dt-data-table>

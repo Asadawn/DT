@@ -1,0 +1,137 @@
+@if (floor(); as f) {
+  <dt-page-header
+    [title]="f.name"
+    [breadcrumb]="[
+      { label: 'Buildings', link: '/buildings' },
+      { label: building()?.name ?? buildingId(), link: ['/buildings', buildingId()] },
+    ]"
+    description="Spaces and devices"
+  >
+    <div actions>
+      <button
+        *hasPermission="'buildings'; action: 'create'"
+        type="button"
+        class="bg-dashboard-accent hover:bg-dashboard-accent/90 rounded-control flex w-fit cursor-pointer items-center gap-1.5 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
+        (click)="showAddSpace.set(true)"
+      >
+        + New Space
+      </button>
+    </div>
+  </dt-page-header>
+
+  <div class="flex flex-col gap-4">
+    <section>
+      <h2 class="mb-2 text-sm font-medium">Spaces</h2>
+      @if (spaces().length === 0) {
+        <dt-empty-state icon="▤" title="No spaces on this floor" />
+      } @else {
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          @for (space of spaces(); track space.id) {
+            <a
+              [routerLink]="['/buildings', buildingId(), 'floors', floorId(), 'spaces', space.id]"
+              class="rounded-card border-border hover:border-primary block border bg-white p-4"
+            >
+              <div class="text-sm font-medium">{{ space.name }}</div>
+              <div class="text-muted-foreground text-xs">{{ space.kind }}</div>
+              <div class="text-muted-foreground mt-2 text-xs">{{ devicesForSpace(space.id).length }} devices</div>
+            </a>
+          }
+        </div>
+      }
+    </section>
+
+    <div>
+      <h2 class="text-muted-foreground mb-2 text-[11px] font-medium tracking-wider uppercase">Operational Status</h2>
+      <div class="grid grid-cols-2 gap-2.5 text-xs">
+        <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+          <div hlmCardContent>
+            <p class="text-muted-foreground">Devices</p>
+            <p class="mt-0.5 text-lg font-medium tabular-nums">{{ deviceCount() }}</p>
+          </div>
+        </div>
+        <div hlmCard size="sm" class="ring-black/5 shadow-xs ring-1">
+          <div hlmCardContent>
+            <p class="text-muted-foreground">Online</p>
+            <p class="mt-0.5 text-lg font-medium tabular-nums">{{ onlineDeviceCount() }} / {{ deviceCount() }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <dt-status-summary title="Device Health" [items]="connectivitySummary()" />
+
+    <app-occupancy-summary [spaces]="spaces()" scopeLabel="floor" />
+
+    <app-room-energy-summary [devices]="devices()" scopeLabel="floor" />
+
+    @if (unassignedDevices().length > 0) {
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="mb-3 text-sm font-medium">Other Devices on This Floor</h2>
+        <ul class="flex flex-col gap-2">
+          @for (device of unassignedDevices(); track device.id) {
+            <li>
+              <a
+                [routerLink]="['/devices', device.id]"
+                class="hover:bg-accent flex items-center justify-between gap-2 rounded-control px-2 py-1.5"
+              >
+                <span class="truncate text-sm">{{ device.name }}</span>
+                <dt-status-chip [status]="device.connectivity" />
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <app-room-maintenance [requests]="floorMaintenance()" scopeLabel="floor" />
+  </div>
+
+  <hlm-dialog [state]="showAddSpace() ? 'open' : 'closed'" (closed)="showAddSpace.set(false)">
+    <ng-template hlmDialogPortal>
+      <hlm-dialog-content class="w-[26rem] max-w-[calc(100%-2rem)] sm:max-w-[26rem]">
+        <hlm-dialog-header>
+          <h3 hlmDialogTitle>New Space on {{ f.name }}</h3>
+        </hlm-dialog-header>
+
+        <div class="flex flex-col gap-3">
+          <p class="text-muted-foreground text-xs">
+            Creates the space on this floor and immediately seeds it as a working smart room — a Fan, Lights, and AC
+            in Switches; a Door Contact, Motion, and AQI sensor in Sensors; and one active Entry Lighting automation.
+          </p>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">Space Name <span class="text-dashboard-danger-strong">*</span></span>
+            <input hlmInput [formField]="identityForm.name" placeholder="e.g. Storage Room" />
+            @if (identityForm.name().touched() && !identityForm.name().valid()) {
+              <span class="text-xs text-red-600">{{ identityForm.name().errors()[0]?.message }}</span>
+            }
+          </label>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">Type</span>
+            <hlm-select [value]="kind()" [itemToString]="kindLabel" (valueChange)="kind.set($any($event) ?? 'office')">
+              <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of kindOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+
+          <div class="mt-2 flex justify-end gap-2">
+            <button hlmBtn variant="ghost" type="button" (click)="showAddSpace.set(false)">Cancel</button>
+            <button hlmBtn type="button" [disabled]="!canSubmit() || submitting()" (click)="createSmartRoom()">
+              @if (submitting()) {
+                <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+              }
+              Create Space
+            </button>
+          </div>
+        </div>
+      </hlm-dialog-content>
+    </ng-template>
+  </hlm-dialog>
+} @else {
+  <dt-empty-state icon="▤" title="Floor not found" />
+}

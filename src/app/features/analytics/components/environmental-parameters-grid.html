@@ -1,0 +1,74 @@
+<div class="mb-3 flex items-center justify-end">
+  <dt-chart-range-toggle [(rangeId)]="rangeId" />
+</div>
+
+<div class="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  <dt-chart-card title="Temperature" [loading]="isLoading()" [noData]="!isLoading() && temperature().series.length === 0">
+    <dt-multi-series-chart [labels]="temperature().labels" [series]="temperature().series" unit="°F" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Humidity" [loading]="isLoading()" [noData]="!isLoading() && humidity().series.length === 0">
+    <dt-multi-series-chart [labels]="humidity().labels" [series]="humidity().series" unit="%" />
+  </dt-chart-card>
+
+  <dt-chart-card title="CO2" [noData]="co2Labels().length === 0">
+    <dt-bar-chart [labels]="co2Labels()" [values]="co2Values()" label="CO2" unit="ppm" color="#D97706" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Air Quality">
+    @if (averageAqi(); as aqi) {
+      <div class="flex h-full flex-col items-center justify-center gap-1 py-4">
+        <span class="text-2xl font-semibold">{{ aqi }}</span>
+        <span class="text-muted-foreground text-xs">Average AQI across {{ aqiDevices().length }} sensor(s)</span>
+        <a routerLink="/analytics/aqi" class="text-dashboard-accent mt-1 text-xs font-medium hover:underline">View AQI Details</a>
+      </div>
+    } @else {
+      <div class="text-muted-foreground flex h-full items-center justify-center py-4 text-sm">No AQI sensors in scope.</div>
+    }
+  </dt-chart-card>
+
+  <dt-chart-card title="Smoke">
+    @if (smokeDevices().length > 0) {
+      <ul class="flex flex-col gap-2 py-1">
+        @for (device of smokeDevices(); track device.id) {
+          <li class="flex items-center justify-between gap-2 text-sm">
+            <span class="truncate">{{ device.name }}</span>
+            <dt-status-chip [status]="stateOf(device)" [toneOverride]="stateOf(device) === 'normal' ? 'success' : 'danger'" />
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="text-muted-foreground flex h-full items-center justify-center py-4 text-sm">No smoke sensors in scope.</div>
+    }
+  </dt-chart-card>
+
+  <dt-chart-card title="Motion">
+    @if (motionDevices().length > 0) {
+      <ul class="flex flex-col gap-2 py-1">
+        @for (device of motionDevices(); track device.id) {
+          <li class="flex items-center justify-between gap-2 text-sm">
+            <span class="truncate">{{ device.name }}</span>
+            <span class="text-muted-foreground text-xs">{{ detectionsOf(device) }} today</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="text-muted-foreground flex h-full items-center justify-center py-4 text-sm">No motion sensors in scope.</div>
+    }
+  </dt-chart-card>
+
+  <dt-chart-card title="Contact">
+    @if (contactDevices().length > 0) {
+      <ul class="flex flex-col gap-2 py-1">
+        @for (device of contactDevices(); track device.id) {
+          <li class="flex items-center justify-between gap-2 text-sm">
+            <span class="truncate">{{ device.name }}</span>
+            <dt-status-chip [status]="stateOf(device)" [toneOverride]="stateOf(device) === 'closed' ? 'success' : 'warning'" />
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="text-muted-foreground flex h-full items-center justify-center py-4 text-sm">No contact sensors in scope.</div>
+    }
+  </dt-chart-card>
+</div>

@@ -1,0 +1,58 @@
+<dt-page-header title="Vendors" description="Directory, specialties and contact info">
+  <div actions>
+    <a *hasPermission="'vendors'; action: 'create'" hlmBtn [routerLink]="['/operations/vendors/new']">New Vendor</a>
+  </div>
+</dt-page-header>
+
+<div hlmCard size="sm" class="mb-3">
+  <div hlmCardContent>
+    <dt-filter-bar [activeFilterCount]="activeFilterCount()" class="block">
+      <dt-search-input primary placeholder="Search vendors…" [value]="search()" (valueChange)="search.set($event)" />
+      <hlm-select inline [value]="specialty()" [itemToString]="specialtyLabel" (valueChange)="specialty.set($event ?? '')">
+        <hlm-select-trigger class="w-44"><hlm-select-value placeholder="All specialties" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of specialtyOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="status()" [itemToString]="statusLabel" (valueChange)="status.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All statuses" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of statusOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <button
+        inline
+        type="button"
+        class="text-muted-foreground hover:text-foreground ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!hasActiveFilters()"
+        (click)="resetFilters()"
+      >
+        <ng-icon name="lucideRotateCcw" size="14" />
+        Reset
+      </button>
+    </dt-filter-bar>
+  </div>
+</div>
+
+<dt-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [loading]="loading()"
+  emptyTitle="No vendors match these filters"
+  (rowClick)="openVendor($event)"
+>
+  <ng-template dtCell="specialties" let-row>
+    <div class="flex flex-wrap gap-1">
+      @for (specialty of row.specialties; track specialty) {
+        <span class="bg-muted rounded-control px-1.5 py-0.5 text-xs">{{ categoryLabel(specialty) }}</span>
+      }
+    </div>
+  </ng-template>
+  <ng-template dtCell="status" let-row>
+    <dt-status-chip [status]="row.status" />
+  </ng-template>
+</dt-data-table>

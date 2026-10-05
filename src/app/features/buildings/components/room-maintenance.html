@@ -1,0 +1,31 @@
+<div hlmCard size="sm">
+  <div hlmCardContent>
+    <div class="mb-2 flex items-center justify-between">
+      <h2 class="text-xs font-medium">Maintenances</h2>
+      <a routerLink="/operations/maintenance" class="text-merik text-xs font-medium hover:underline">View all →</a>
+    </div>
+
+    @if (requests().length === 0) {
+      <p class="text-muted-foreground text-xs">No maintenance requests for this {{ scopeLabel() }}.</p>
+    } @else {
+      <ul class="divide-border flex flex-col divide-y">
+        @for (request of requests(); track request.id) {
+          <li>
+            <a
+              [routerLink]="['/operations/maintenance', request.id]"
+              class="hover:bg-accent rounded-control -mx-2 flex items-center justify-between gap-3 px-2 py-2"
+            >
+              <div class="min-w-0">
+                <div class="truncate text-xs font-medium">{{ request.title }}</div>
+                <div class="text-muted-foreground truncate text-xs">
+                  {{ request.assignee ?? 'Unassigned' }} · updated {{ request.updatedAt | date: 'short' }}
+                </div>
+              </div>
+              <dt-status-chip [status]="request.status" weight="normal" />
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

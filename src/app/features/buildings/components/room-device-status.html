@@ -1,0 +1,15 @@
+<app-room-stat-card icon="lucideCpu" label="Devices">
+  <button
+    header-action
+    type="button"
+    class="text-merik cursor-pointer text-xs font-medium hover:underline"
+    (click)="scrollToDevices()"
+  >
+    View Devices →
+  </button>
+
+  <p class="text-2xl font-semibold leading-none">
+    {{ online() }}<span class="text-muted-foreground text-lg font-normal">/{{ total() }}</span>
+  </p>
+  <p class="text-muted-foreground mt-1 text-xs">online</p>
+</app-room-stat-card>

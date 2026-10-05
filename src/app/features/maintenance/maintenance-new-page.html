@@ -1,0 +1,223 @@
+<div class="mx-auto mt-6 max-w-2xl">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-6">
+      <a routerLink="/operations/maintenance" class="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1 text-sm">
+        <ng-icon name="lucideChevronLeft" size="16" />
+        Back to Maintenances
+      </a>
+
+      <h1 class="text-foreground text-center text-2xl font-semibold">Report Maintenance</h1>
+
+      <form class="flex flex-col gap-5" novalidate (submit)="$event.preventDefault(); onSubmit()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="requestForm.name"
+              [forceInvalid]="submitAttempted() && !requestForm.name().valid()"
+              placeholder="Enter your name"
+            />
+            @if ((requestForm.name().touched() || submitAttempted()) && !requestForm.name().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ requestForm.name().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Contact No <span class="text-dashboard-danger-strong">*</span></span>
+            <div
+              class="border-border focus-within:ring-ring flex items-center gap-2 rounded-control border bg-white px-3 focus-within:ring-1"
+              [class.border-destructive]="(requestForm.contactNo().touched() || submitAttempted()) && !requestForm.contactNo().valid()"
+            >
+              <span class="text-muted-foreground shrink-0 text-sm">{{ contactCountryCode }}</span>
+              <input
+                hlmInput
+                [formField]="requestForm.contactNo"
+                placeholder="XXXXXXXX"
+                class="border-0! bg-transparent! px-0! shadow-none! focus-visible:ring-0!"
+              />
+            </div>
+            @if ((requestForm.contactNo().touched() || submitAttempted()) && !requestForm.contactNo().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ requestForm.contactNo().errors()[0]?.message }}</span>
+            }
+          </label>
+        </div>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Email <span class="text-dashboard-danger-strong">*</span></span>
+          <input
+            hlmInput
+            type="email"
+            [formField]="requestForm.email"
+            [forceInvalid]="submitAttempted() && !requestForm.email().valid()"
+            placeholder="Enter your Email"
+          />
+          @if ((requestForm.email().touched() || submitAttempted()) && !requestForm.email().valid()) {
+            <span class="text-dashboard-danger-strong text-xs">{{ requestForm.email().errors()[0]?.message }}</span>
+          }
+        </label>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Priority <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().priority" [itemToString]="priorityLabel" (valueChange)="model.update(m => ({...m, priority: $any($event)}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Select Priority" /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of priorityOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Type <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().category" [itemToString]="categoryLabel" (valueChange)="model.update(m => ({...m, category: $any($event)}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Select Type" /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of categoryOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+        </div>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Title <span class="text-dashboard-danger-strong">*</span></span>
+          <input
+            hlmInput
+            [formField]="requestForm.title"
+            [forceInvalid]="submitAttempted() && !requestForm.title().valid()"
+            placeholder="Enter title"
+          />
+          @if ((requestForm.title().touched() || submitAttempted()) && !requestForm.title().valid()) {
+            <span class="text-dashboard-danger-strong text-xs">{{ requestForm.title().errors()[0]?.message }}</span>
+          }
+        </label>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Description <span class="text-dashboard-danger-strong">*</span></span>
+          <textarea
+            hlmInput
+            [formField]="requestForm.description"
+            [forceInvalid]="submitAttempted() && !requestForm.description().valid()"
+            rows="4"
+            placeholder="Enter Details"
+            class="min-h-24 py-2"
+          ></textarea>
+          @if ((requestForm.description().touched() || submitAttempted()) && !requestForm.description().valid()) {
+            <span class="text-dashboard-danger-strong text-xs">{{ requestForm.description().errors()[0]?.message }}</span>
+          }
+        </label>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Building <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().buildingId" [itemToString]="buildingLabel" (valueChange)="model.update(m => ({...m, buildingId: $event ?? '', floorId: '', spaceId: ''}))">
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(requestForm.buildingId().touched() || submitAttempted()) && !requestForm.buildingId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select Building" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of buildingOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((requestForm.buildingId().touched() || submitAttempted()) && !requestForm.buildingId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ requestForm.buildingId().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Floor <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().floorId" [itemToString]="floorLabel" (valueChange)="model.update(m => ({...m, floorId: $event ?? '', spaceId: ''}))">
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(requestForm.floorId().touched() || submitAttempted()) && !requestForm.floorId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select Floor" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of floorOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((requestForm.floorId().touched() || submitAttempted()) && !requestForm.floorId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ requestForm.floorId().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Space <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().spaceId" [itemToString]="spaceLabel" (valueChange)="model.update(m => ({...m, spaceId: $event ?? ''}))">
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(requestForm.spaceId().touched() || submitAttempted()) && !requestForm.spaceId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select Space" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of spaceOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((requestForm.spaceId().touched() || submitAttempted()) && !requestForm.spaceId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ requestForm.spaceId().errors()[0]?.message }}</span>
+            }
+          </label>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Upload Image <span class="text-dashboard-danger-strong">*</span></span>
+          <input #imageInput type="file" accept="image/jpeg,image/jpg,image/png" class="hidden" (change)="onImageFileSelected($any($event.target).files?.[0]); $any($event.target).value = ''" />
+
+          @if (model().imageDataUrl; as image) {
+            <div class="border-border relative overflow-hidden rounded-control border">
+              <img [src]="image" alt="Uploaded maintenance issue photo" class="h-48 w-full object-cover" />
+              <button
+                type="button"
+                class="bg-background/90 hover:bg-background absolute top-2 right-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full shadow-sm"
+                aria-label="Remove uploaded image"
+                (click)="removeImage()"
+              >
+                <ng-icon name="lucideX" size="14" />
+              </button>
+            </div>
+          } @else {
+            <button
+              type="button"
+              class="rounded-control flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed px-4 py-10 text-center transition-colors"
+              [class]="imageDragOver() ? 'border-dashboard-accent bg-dashboard-accent/5' : 'border-border hover:border-dashboard-accent/50'"
+              (click)="imageInput.click()"
+              (dragover)="$event.preventDefault(); imageDragOver.set(true)"
+              (dragleave)="imageDragOver.set(false)"
+              (drop)="onImageDrop($event)"
+            >
+              <ng-icon name="lucideImage" size="28" class="text-muted-foreground" />
+              <p class="text-sm">
+                Click to upload <span class="text-dashboard-accent font-medium">or drag and drop</span>
+              </p>
+              <p class="text-muted-foreground text-xs">JPG, JPEG, PNG less than 1MB</p>
+            </button>
+          }
+          @if (imageError()) {
+            <span class="text-dashboard-danger-strong text-xs">{{ imageError() }}</span>
+          } @else if ((requestForm.imageDataUrl().touched() || submitAttempted()) && !requestForm.imageDataUrl().valid()) {
+            <span class="text-dashboard-danger-strong text-xs">{{ requestForm.imageDataUrl().errors()[0]?.message }}</span>
+          }
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button hlmBtn type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Create Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

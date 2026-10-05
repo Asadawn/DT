@@ -1,0 +1,116 @@
+@if (space(); as s) {
+  <dt-page-header
+    [title]="s.name"
+    [breadcrumb]="[
+      { label: 'Buildings', link: '/buildings' },
+      { label: building()?.name ?? buildingId(), link: ['/buildings', buildingId()] },
+      { label: floor()?.name ?? floorId(), link: ['/buildings', buildingId(), 'floors', floorId()] },
+    ]"
+    [description]="(s.kind | titlecase) + (floor()?.name ? ' • ' + floor()?.name : '')"
+    icon="lucideLayoutGrid"
+    descriptionIcon="lucideMapPin"
+  >
+    @if (devices().length > 0) {
+      <span
+        status
+        class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs"
+        [class]="onlineCount() > 0 ? 'bg-dashboard-accent/10 text-dashboard-accent' : 'bg-muted text-muted-foreground'"
+      >
+        <span class="h-1.5 w-1.5 rounded-full" [class]="onlineCount() > 0 ? 'bg-dashboard-accent' : 'bg-muted-foreground/50'"></span>
+        {{ onlineCount() > 0 ? 'Active' : 'Inactive' }}
+      </span>
+    }
+    <div actions>
+      <button
+        *hasPermission="'devices'; action: 'create'"
+        type="button"
+        class="bg-dashboard-accent hover:bg-dashboard-accent/90 rounded-control flex w-fit cursor-pointer items-center gap-1.5 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors"
+        (click)="showAddDevice.set(true)"
+      >
+        + Add Device
+      </button>
+    </div>
+  </dt-page-header>
+
+  <div class="flex flex-col gap-4">
+    <div class="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <app-room-assigned-to [assignments]="roomAssignments()" />
+      <app-room-device-status [online]="onlineCount()" [total]="devices().length" />
+      <app-room-occupancy-summary [location]="{ buildingId: buildingId(), floorId: floorId(), spaceId: spaceId() }" />
+      <app-room-access-control [assignments]="roomAssignments()" />
+    </div>
+
+    <div class="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
+      <app-room-recent-bookings [location]="{ buildingId: buildingId(), floorId: floorId(), spaceId: spaceId() }" />
+      <app-room-energy-summary [devices]="devices()" />
+    </div>
+
+    <section id="devices">
+      <h2 class="mb-3 text-sm font-medium">Devices</h2>
+      @if (switches().length === 0) {
+        <dt-empty-state icon="⏻" title="No controlling devices in this room" />
+      } @else {
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          @for (device of switches(); track device.id) {
+            <dt-device-card [device]="device" (select)="selectedDeviceId.set($event.id)" />
+          }
+        </div>
+      }
+    </section>
+
+    <section>
+      <h2 class="mb-3 text-sm font-medium">Sensors</h2>
+      @if (sensors().length === 0) {
+        <dt-empty-state icon="◈" title="No monitoring devices in this room" />
+      } @else {
+        <div class="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-2">
+          @for (device of sensors(); track device.id) {
+            <div hlmCard class="h-full">
+              <div hlmCardContent class="flex h-full flex-1 flex-col">
+                <dt-device-quick-view [device]="device" />
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <app-room-maintenance [requests]="roomMaintenance()" />
+
+    <app-room-automations [automations]="roomAutomations()" />
+  </div>
+
+  <hlm-dialog [state]="showAddDevice() ? 'open' : 'closed'" (closed)="showAddDevice.set(false)">
+    <ng-template hlmDialogPortal>
+      <hlm-dialog-content class="w-[28rem] max-w-[calc(100%-2rem)] sm:max-w-[28rem]">
+        <hlm-dialog-header>
+          <h3 hlmDialogTitle>Add Device</h3>
+        </hlm-dialog-header>
+        @if (showAddDevice()) {
+          <app-device-add-wizard
+            [buildingId]="buildingId()"
+            [floorId]="floorId()"
+            [spaceId]="spaceId()"
+            (created)="onDeviceCreated($event)"
+            (cancelled)="showAddDevice.set(false)"
+          />
+        }
+      </hlm-dialog-content>
+    </ng-template>
+  </hlm-dialog>
+
+  <hlm-dialog [state]="selectedDevice() ? 'open' : 'closed'" (closed)="selectedDeviceId.set(null)">
+    <ng-template hlmDialogPortal>
+      <hlm-dialog-content class="w-[28rem] max-w-[calc(100%-2rem)] sm:max-w-[28rem]">
+        <hlm-dialog-header>
+          <h3 hlmDialogTitle>Device</h3>
+        </hlm-dialog-header>
+        @if (selectedDevice(); as device) {
+          <dt-device-quick-view [device]="device" [breadcrumb]="s.name" />
+        }
+      </hlm-dialog-content>
+    </ng-template>
+  </hlm-dialog>
+} @else {
+  <dt-empty-state icon="▭" title="Space not found" />
+}

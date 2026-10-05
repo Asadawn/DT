@@ -1,0 +1,695 @@
+<div class="flex flex-col dt-dash-gap lg:h-full lg:min-h-0">
+  <div
+    class="grid grid-cols-1 dt-dash-gap lg:h-[clamp(12.875rem,calc(5.0781vw_+_9.625rem),17.75rem)] lg:shrink-0 lg:grid-cols-[minmax(0,44fr)_repeat(4,minmax(0,9fr))]"
+  >
+    <div
+      class="from-dashboard-accent/10 via-canvas relative flex flex-col overflow-hidden rounded-2xl border border-border bg-gradient-to-br to-white p-[clamp(0.875rem,calc(0.3906vw_+_0.625rem),1.25rem)] shadow-sm"
+    >
+      <svg
+        class="pointer-events-none absolute inset-0 h-full w-full opacity-[0.15]"
+        viewBox="0 0 400 200"
+        preserveAspectRatio="none"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M 0 150 C 60 150, 60 110, 110 110 S 160 70, 200 70 S 240 130, 280 130 S 330 40, 400 20"
+          stroke="var(--dt-color-dashboard-accent)"
+          stroke-width="2"
+          vector-effect="non-scaling-stroke"
+        />
+        <circle cx="280" cy="130" r="4" fill="var(--dt-color-dashboard-accent)" />
+      </svg>
+
+      <div
+        class="bg-dashboard-accent/10 pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full blur-2xl"
+      ></div>
+      <div
+        class="bg-dashboard-accent/10 pointer-events-none absolute -bottom-20 left-10 h-44 w-44 rounded-full blur-2xl"
+      ></div>
+
+      <div
+        class="relative flex flex-wrap items-center gap-x-[clamp(1.0rem,calc(0.2604vw_+_0.8333rem),1.25rem)] gap-y-1.5"
+      >
+        <span class="text-dashboard-accent dt-eyebrow font-medium tracking-[0.15em] uppercase"
+          >Merik Digital Twin</span
+        >
+
+        <nav
+          class="text-muted-foreground flex flex-wrap gap-x-[clamp(1.0rem,calc(0.2604vw_+_0.8333rem),1.25rem)] gap-y-1 dt-text-sm font-medium"
+        >
+          <span class="text-dashboard-accent border-dashboard-accent border-b-2 pb-1"
+            >Overview</span
+          >
+          <a routerLink="/devices" class="hover:text-foreground pb-1 transition-colors">Devices</a>
+          <a routerLink="/analytics/energy" class="hover:text-foreground pb-1 transition-colors"
+            >Energy</a
+          >
+          <a routerLink="/operations/occupancy" class="hover:text-foreground pb-1 transition-colors"
+            >Room Usage</a
+          >
+          <a
+            routerLink="/operations/maintenance"
+            class="hover:text-foreground pb-1 transition-colors"
+            >Maintenance</a
+          >
+        </nav>
+      </div>
+
+      <h1
+        class="font-light relative mt-1 text-[clamp(1.875rem,calc(1.1719vw_+_1.125rem),3.0rem)] leading-[1.1] tracking-tight lg:whitespace-nowrap"
+      >
+        Smart Building Operations
+      </h1>
+      <p
+        class="text-muted-foreground relative mt-1 max-w-[clamp(24.0rem,calc(4.1667vw_+_21.3333rem),28.0rem)] dt-text-md leading-snug"
+      >
+        Connect people, systems and data for a smarter, more efficient tomorrow.
+      </p>
+
+      <span
+        class="text-muted-foreground/70 pointer-events-none absolute right-6 bottom-6 hidden text-right dt-eyebrow leading-tight tracking-[0.1em] uppercase lg:block"
+      >
+        Real Data<br />Real Impact
+      </span>
+
+      @if (selectedBuilding(); as b) {
+        <a
+          [routerLink]="['/buildings', b.id]"
+          class="bg-dashboard-accent hover:bg-dashboard-accent/90 relative mt-auto flex w-fit items-center gap-1.5 rounded-control px-[clamp(1.0rem,calc(0.2604vw_+_0.8333rem),1.25rem)] py-[clamp(0.5rem,calc(0.1302vw_+_0.4167rem),0.625rem)] dt-text-md font-medium text-white shadow-sm transition-colors"
+        >
+          Open Twin
+          <ng-icon name="lucideArrowRight" size="14" />
+        </a>
+      }
+    </div>
+
+    <dt-kpi-card
+      [legacyLayout]="true"
+      label="Total Buildings"
+      [value]="buildings().length"
+      ngIcon="lucideBuilding2"
+      [spark]="buildingsSparkMock"
+      [delta]="0"
+      deltaLabel="vs last period"
+    />
+    <dt-kpi-card
+      [legacyLayout]="true"
+      label="Total Devices"
+      [value]="deviceCount()"
+      ngIcon="lucideCpu"
+      [spark]="devicesSparkMock"
+      [delta]="5"
+      deltaLabel="vs last period"
+    />
+    <dt-kpi-card
+      [legacyLayout]="true"
+      label="Total Energy"
+      [value]="energyTodayKwh().toFixed(0)"
+      unit="kWh"
+      ngIcon="lucideZap"
+      [spark]="energySparkValues()"
+      [delta]="energyDeltaPercent()"
+      deltaLabel="vs prior 12h"
+      deltaGood="down"
+    />
+    <dt-kpi-card
+      [legacyLayout]="true"
+      label="Total Alerts"
+      [value]="deviceAlertsCount()"
+      ngIcon="lucideBell"
+      [spark]="alertsSparkMock"
+      [delta]="2"
+      deltaUnit=""
+      deltaLabel="vs last period"
+      deltaGood="down"
+    />
+  </div>
+
+  <div class="grid flex-shrink-0 grid-cols-1 dt-dash-gap sm:grid-cols-3">
+    <hlm-select
+      [value]="locationContext.selectedBuildingId() ?? ''"
+      [itemToString]="buildingLabel"
+      (valueChange)="selectBuilding($event ?? '')"
+    >
+      <hlm-select-trigger
+        class="data-[size=default]:h-auto w-full dt-dash-gap rounded-2xl border-0 bg-white dt-select-trigger shadow-sm"
+      >
+        <span
+          class="bg-dashboard-accent/10 text-dashboard-accent flex h-[clamp(2.25rem,calc(0.5208vw_+_1.9167rem),2.75rem)] w-[clamp(2.25rem,calc(0.5208vw_+_1.9167rem),2.75rem)] shrink-0 items-center justify-center rounded-xl"
+        >
+          <ng-icon name="lucideBuilding2" size="16" />
+        </span>
+        <span class="flex min-w-0 flex-1 flex-col items-start text-left">
+          <span class="text-muted-foreground dt-select-label leading-tight">Building</span>
+          <hlm-select-value
+            class="w-full truncate dt-text-md leading-tight font-medium"
+            placeholder="Select building"
+          />
+        </span>
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        @for (option of buildingOptions(); track option.value) {
+          <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
+
+    <hlm-select
+      [value]="selectedFloorId()"
+      [itemToString]="floorLabel"
+      (valueChange)="selectedFloorId.set($event ?? '')"
+    >
+      <hlm-select-trigger
+        class="data-[size=default]:h-auto w-full dt-dash-gap rounded-2xl border-0 bg-white dt-select-trigger shadow-sm"
+      >
+        <span
+          class="bg-dashboard-accent/10 text-dashboard-accent flex h-[clamp(2.25rem,calc(0.5208vw_+_1.9167rem),2.75rem)] w-[clamp(2.25rem,calc(0.5208vw_+_1.9167rem),2.75rem)] shrink-0 items-center justify-center rounded-xl"
+        >
+          <ng-icon name="lucideLayers" size="16" />
+        </span>
+        <span class="flex min-w-0 flex-1 flex-col items-start text-left">
+          <span class="text-muted-foreground dt-select-label leading-tight">Floor</span>
+          <hlm-select-value
+            class="w-full truncate dt-text-md leading-tight font-medium"
+            placeholder="All Floors"
+          />
+        </span>
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        <hlm-select-item value="">All Floors</hlm-select-item>
+        @for (option of floorOptions(); track option.value) {
+          <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
+
+    <hlm-select
+      [value]="selectedDateRange()"
+      [itemToString]="dateRangeLabel"
+      (valueChange)="selectedDateRange.set($any($event) ?? 'today')"
+    >
+      <hlm-select-trigger
+        class="data-[size=default]:h-auto w-full dt-dash-gap rounded-2xl border-0 bg-white dt-select-trigger shadow-sm"
+      >
+        <span
+          class="bg-dashboard-accent/10 text-dashboard-accent flex h-[clamp(2.25rem,calc(0.5208vw_+_1.9167rem),2.75rem)] w-[clamp(2.25rem,calc(0.5208vw_+_1.9167rem),2.75rem)] shrink-0 items-center justify-center rounded-xl"
+        >
+          <ng-icon name="lucideCalendarDays" size="16" />
+        </span>
+        <span class="flex min-w-0 flex-1 flex-col items-start text-left">
+          <span class="text-muted-foreground dt-select-label leading-tight">Date Range</span>
+          <hlm-select-value class="w-full truncate dt-text-md leading-tight font-medium" />
+        </span>
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        @for (option of dateRangeOptions; track option.value) {
+          <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
+  </div>
+
+  <div class="grid grid-cols-1 dt-dash-gap md:grid-cols-3 lg:min-h-[11.5rem] lg:flex-1">
+    <section
+      hlmCard
+      size="sm"
+      class="ring-black/5 flex h-full flex-col overflow-hidden rounded-2xl shadow-sm ring-1 dt-dash-card"
+    >
+      <div hlmCardContent class="flex min-h-0 flex-1 flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="flex items-center gap-1.5 dt-text-md font-medium">
+            <ng-icon name="lucideCpu" size="15" class="text-dashboard-accent" />
+            Device Status
+          </h2>
+          <span class="inline-flex items-center gap-1 dt-text-sm"
+            ><span class="text-muted-foreground">Total Devices</span
+            ><span class="text-foreground font-medium tabular-nums">{{
+              connectivitySummary().total
+            }}</span></span
+          >
+        </div>
+
+        @if (connectivitySummary().total === 0) {
+          <dt-empty-state icon="◈" title="No devices in scope" class="mt-4" />
+        } @else {
+          <div
+            class="flex min-h-0 flex-1 flex-col justify-center gap-[clamp(0.75rem,calc(0.5208vw_+_0.4167rem),1.25rem)] min-[1700px]:gap-[1.75rem]"
+          >
+            <div class="divide-border grid grid-cols-4 divide-x">
+              @for (item of connectivitySummary().items; track item.label) {
+                <div class="flex flex-col gap-0.5 px-1.5 first:pl-0">
+                  <span class="flex items-center gap-1 dt-stat-label leading-tight">
+                    <span
+                      class="h-1.5 w-1.5 shrink-0 rounded-full"
+                      [class.bg-dashboard-accent]="item.tone === 'success'"
+                      [class.bg-dashboard-danger]="item.tone === 'danger'"
+                      [class.bg-dashboard-warning]="item.tone === 'warning'"
+                      [class.bg-dashboard-neutral]="item.tone === 'neutral'"
+                    ></span>
+                    <span class="text-muted-foreground">{{ item.label }}</span>
+                  </span>
+                  <p class="font-light dt-stat-value tabular-nums ml-[8px]">{{ item.count }}</p>
+                  <p class="text-muted-foreground dt-text-xs ml-[8px]">
+                    {{
+                      connectivitySummary().total > 0
+                        ? ((item.count / connectivitySummary().total) * 100 | number: '1.0-0')
+                        : 0
+                    }}%
+                  </p>
+                </div>
+              }
+            </div>
+
+            <div class="bg-muted flex h-2 w-full overflow-hidden rounded-full">
+              @for (segment of connectivityBarSegments(); track $index) {
+                @if (segment.value > 0) {
+                  <span [class]="segment.colorClass" [style.width.%]="segment.value"></span>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section
+      hlmCard
+      size="sm"
+      class="ring-black/5 flex h-full flex-col overflow-hidden rounded-2xl shadow-sm ring-1 dt-dash-card"
+    >
+      <div hlmCardContent class="flex min-h-0 flex-1 flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="flex items-center gap-1.5 dt-text-md font-medium">
+            <ng-icon name="lucideWrench" size="15" class="text-dashboard-accent" />
+            Maintenance
+          </h2>
+          <span class="inline-flex items-center gap-1 dt-text-sm"
+            ><span class="text-muted-foreground">Total Tasks</span
+            ><span class="text-foreground font-medium tabular-nums">{{
+              maintenanceSummary().total
+            }}</span></span
+          >
+        </div>
+
+        @if (maintenanceSummary().total === 0) {
+          <dt-empty-state icon="✓" title="No maintenance requests" class="mt-4" />
+        } @else {
+          <div class="flex min-h-0 flex-1 flex-col justify-center gap-2">
+            <div
+              class="flex flex-1 flex-col justify-center gap-[clamp(0.75rem,calc(0.5208vw_+_0.4167rem),1.25rem)] min-[1700px]:gap-[1.75rem]"
+            >
+              <div class="divide-border grid grid-cols-4 divide-x">
+                <div class="flex flex-col gap-0.5 px-1.5 first:pl-0">
+                  <span class="flex items-center gap-1 dt-stat-label leading-tight"
+                    ><span class="bg-dashboard-accent h-1.5 w-1.5 shrink-0 rounded-full"></span
+                    ><span class="text-muted-foreground">Open</span></span
+                  >
+                  <p class="font-light dt-stat-value tabular-nums ml-[8px]">
+                    {{ maintenanceSummary().open }}
+                  </p>
+                </div>
+                <div class="flex flex-col gap-0.5 px-1.5 first:pl-0">
+                  <span class="flex items-center gap-1 dt-stat-label leading-tight"
+                    ><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-dashboard-info"></span
+                    ><span class="text-muted-foreground">Active</span></span
+                  >
+                  <p class="font-light dt-stat-value tabular-nums ml-[8px]">
+                    {{ maintenanceSummary().inProgress }}
+                  </p>
+                </div>
+                <div class="flex flex-col gap-0.5 px-1.5 first:pl-0">
+                  <span class="flex items-center gap-1 dt-stat-label leading-tight"
+                    ><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-dashboard-warning"></span
+                    ><span class="text-muted-foreground">Pending</span></span
+                  >
+                  <p class="font-light dt-stat-value tabular-nums ml-[8px]">
+                    {{ maintenanceSummary().pending }}
+                  </p>
+                </div>
+                <div class="flex flex-col gap-0.5 px-1.5 first:pl-0">
+                  <span class="flex items-center gap-1 dt-stat-label leading-tight"
+                    ><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-dashboard-neutral"></span
+                    ><span class="text-muted-foreground">Completed</span></span
+                  >
+                  <p class="font-light dt-stat-value tabular-nums ml-[8px]">
+                    {{ maintenanceSummary().completed }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="bg-muted flex h-2 w-full overflow-hidden rounded-full">
+                @if (maintenanceSummary().total > 0) {
+                  <span
+                    class="bg-dashboard-accent"
+                    [style.width.%]="(maintenanceSummary().open / maintenanceSummary().total) * 100"
+                  ></span>
+                  <span
+                    class="bg-dashboard-info"
+                    [style.width.%]="
+                      (maintenanceSummary().inProgress / maintenanceSummary().total) * 100
+                    "
+                  ></span>
+                  <span
+                    class="bg-dashboard-warning"
+                    [style.width.%]="
+                      (maintenanceSummary().pending / maintenanceSummary().total) * 100
+                    "
+                  ></span>
+                  <span
+                    class="bg-dashboard-neutral"
+                    [style.width.%]="
+                      (maintenanceSummary().completed / maintenanceSummary().total) * 100
+                    "
+                  ></span>
+                }
+              </div>
+            </div>
+
+            <div
+              class="flex items-center justify-between rounded-xl bg-dashboard-danger/10 px-3 py-1.5"
+            >
+              <span class="flex items-center gap-1.5 dt-text-body text-dashboard-danger-strong">
+                <ng-icon name="lucideArrowUp" size="13" />
+                High Priority
+              </span>
+              <span class="dt-text-md font-medium tabular-nums">{{ highPriorityCount() }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section
+      hlmCard
+      size="sm"
+      class="ring-black/5 flex h-full flex-col overflow-hidden rounded-2xl shadow-sm ring-1 dt-dash-card"
+    >
+      <div hlmCardContent class="flex min-h-0 flex-1 flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="flex items-center gap-1.5 dt-text-md font-medium">
+            <ng-icon name="lucideActivity" size="15" class="text-dashboard-accent" />
+            System Health
+          </h2>
+          <span class="text-muted-foreground dt-text-sm">Overall Status</span>
+        </div>
+
+        <div
+          class="flex flex-1 items-center gap-[clamp(0.375rem,calc(0.9115vw_-_0.2083rem),1.25rem)]"
+        >
+          <div class="flex flex-1 flex-col items-center justify-center">
+            <dt-gauge
+              [value]="onlinePercent()"
+              valueSuffix="%"
+              unit="Device Health"
+              [color]="gaugeColor"
+              trackColor="color-mix(in srgb, var(--dt-color-dashboard-accent) 22%, white)"
+            />
+          </div>
+          <div
+            class="divide-border flex flex-1 flex-col divide-y text-[clamp(0.75rem,calc(0.2604vw_+_0.5833rem),1.0rem)]"
+          >
+            <div
+              class="flex items-center justify-between py-[clamp(0.25rem,calc(0.3906vw_+_0.0rem),0.625rem)] first:pt-0 last:pb-0"
+            >
+              <span class="text-muted-foreground flex items-center gap-1.5"
+                ><span class="h-1.5 w-1.5 rounded-full bg-dashboard-danger"></span>Device
+                Alerts</span
+              >
+              <span class="font-medium tabular-nums">{{ deviceAlertsCount() }}</span>
+            </div>
+            <div
+              class="flex items-center justify-between py-[clamp(0.25rem,calc(0.3906vw_+_0.0rem),0.625rem)] first:pt-0 last:pb-0"
+            >
+              <span class="text-muted-foreground flex items-center gap-1.5"
+                ><span class="h-1.5 w-1.5 rounded-full bg-dashboard-danger"></span>Critical</span
+              >
+              <span class="font-medium tabular-nums">{{ criticalCount() }}</span>
+            </div>
+            <div
+              class="flex items-center justify-between py-[clamp(0.25rem,calc(0.3906vw_+_0.0rem),0.625rem)] first:pt-0 last:pb-0"
+            >
+              <span class="text-muted-foreground flex items-center gap-1.5"
+                ><span class="h-1.5 w-1.5 rounded-full bg-dashboard-warning"></span>Warning</span
+              >
+              <span class="font-medium tabular-nums">{{ warningCount() }}</span>
+            </div>
+            <div
+              class="flex items-center justify-between py-[clamp(0.25rem,calc(0.3906vw_+_0.0rem),0.625rem)] first:pt-0 last:pb-0"
+            >
+              <span class="text-muted-foreground flex items-center gap-1.5"
+                ><span class="h-1.5 w-1.5 rounded-full bg-dashboard-neutral"></span>Attention</span
+              >
+              <span class="font-medium tabular-nums">{{ needsAttentionCount() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid grid-cols-1 dt-dash-gap md:grid-cols-3 lg:min-h-[11.5rem] lg:flex-1">
+    <section
+      hlmCard
+      size="sm"
+      class="ring-black/5 flex h-full flex-col overflow-hidden rounded-2xl shadow-sm ring-1 dt-dash-card"
+    >
+      <div hlmCardContent class="flex min-h-0 flex-1 flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="flex items-center gap-1.5 dt-text-md font-medium">
+            <ng-icon name="lucideZap" size="15" class="text-dashboard-accent" />
+            Energy
+          </h2>
+          <span class="text-muted-foreground dt-text-sm">Total Energy Usage</span>
+        </div>
+
+        <div
+          class="flex min-h-0 flex-1 flex-col justify-center gap-[clamp(0rem,calc(0.5208vw_-_0.3333rem),0.5rem)]"
+        >
+          <div class="flex flex-col gap-0.5">
+            <div class="flex items-baseline gap-1.5">
+              <span class="font-light dt-metric-value leading-tight tabular-nums">{{
+                energyTodayKwh() | number: '1.0-0'
+              }}</span>
+              <span class="text-muted-foreground dt-card-text-sm">kWh</span>
+            </div>
+            @if (energyDeltaPercent() !== null) {
+              <div
+                class="flex items-center gap-0.5 dt-card-text-sm leading-tight font-medium"
+                [class]="
+                  energyDeltaPercent()! <= 0
+                    ? 'text-dashboard-accent'
+                    : 'text-dashboard-danger-strong'
+                "
+              >
+                <ng-icon
+                  [name]="energyDeltaPercent()! <= 0 ? 'lucideArrowDown' : 'lucideArrowUp'"
+                  size="12"
+                />
+                {{ energyDeltaPercent() }}%
+                <span class="text-muted-foreground font-normal">vs last period</span>
+              </div>
+            }
+          </div>
+
+          @if (energyBreakdown().length === 0) {
+            <p class="text-muted-foreground dt-card-text-sm">No metered devices in scope.</p>
+          } @else {
+            <div
+              class="bg-muted my-[clamp(0rem,calc(2.1145vw_-_1.8833rem),1.5rem)] flex h-2 w-full overflow-hidden rounded-full"
+            >
+              @for (bucket of energyBreakdown(); track bucket.label) {
+                <span
+                  class="bg-dashboard-accent block h-full"
+                  [style.width.%]="bucket.percent"
+                  [style.opacity]="1 - $index * 0.22"
+                ></span>
+              }
+            </div>
+
+            <div class="flex min-h-0 flex-col gap-1 overflow-y-auto">
+              @for (bucket of energyBreakdown(); track bucket.label) {
+                <div class="flex items-center gap-2 dt-card-text-sm leading-tight">
+                  <span
+                    class="bg-dashboard-accent h-1.5 w-1.5 shrink-0 rounded-full"
+                    [style.opacity]="1 - $index * 0.22"
+                  ></span>
+                  <span class="text-muted-foreground flex-1 truncate">{{ bucket.label }}</span>
+                  <span class="font-medium tabular-nums">{{ bucket.percent }}%</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section
+      hlmCard
+      size="sm"
+      class="ring-black/5 flex h-full flex-col overflow-hidden rounded-2xl shadow-sm ring-1 dt-dash-card"
+    >
+      <div hlmCardContent class="flex min-h-0 flex-1 flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="flex items-center gap-1.5 dt-text-md font-medium">
+            <ng-icon name="lucideUsers" size="15" class="text-dashboard-accent" />
+            Occupancy
+          </h2>
+          <span class="text-muted-foreground dt-text-sm">Occupied Spaces</span>
+        </div>
+
+        <div
+          class="flex min-h-0 flex-1 flex-col justify-between gap-[clamp(0rem,calc(0.5208vw_-_0.3333rem),0.5rem)] pt-[clamp(0rem,calc(2.1145vw_-_1.8833rem),1.5rem)]"
+        >
+          <div class="flex items-start justify-between">
+            <span class="font-light dt-metric-value leading-tight tabular-nums"
+              >{{ occupiedPercent() }}%</span
+            >
+            <div class="flex flex-col gap-0.5 text-right leading-tight">
+              <span class="dt-card-text-sm font-medium tabular-nums"
+                >{{ occupancyRollup().occupied }} / {{ occupancyRollup().total }}</span
+              >
+              <p class="text-muted-foreground dt-card-text-xs leading-tight">Current Occupancy</p>
+            </div>
+          </div>
+
+          @if (occupancyRollup().total === 0) {
+            <dt-empty-state icon="○" title="No spaces in scope" />
+          } @else {
+            <div class="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+              <span
+                class="bg-dashboard-accent block h-full rounded-full"
+                [style.width.%]="occupiedPercent()"
+              ></span>
+            </div>
+
+            <div class="flex flex-col gap-0.5 dt-card-text-sm leading-tight">
+              <div class="flex items-center gap-2">
+                <span class="bg-dashboard-accent h-1.5 w-1.5 shrink-0 rounded-full"></span>
+                <span class="text-muted-foreground flex-1">Occupied</span>
+                <span class="inline-block w-6 text-center font-medium tabular-nums">{{
+                  occupancyRollup().occupied
+                }}</span>
+                <span class="text-muted-foreground w-10 text-right tabular-nums"
+                  >{{ occupiedPercent() }}%</span
+                >
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-dashboard-neutral-soft"></span>
+                <span class="text-muted-foreground flex-1">Vacant</span>
+                <span class="inline-block w-6 text-center font-medium tabular-nums">{{
+                  occupancyRollup().vacant
+                }}</span>
+                <span class="text-muted-foreground w-10 text-right tabular-nums"
+                  >{{ 100 - occupiedPercent() }}%</span
+                >
+              </div>
+            </div>
+
+            <div
+              class="bg-dashboard-accent/10 grid grid-cols-2 gap-2 rounded-xl px-3 py-1 text-center min-[1700px]:py-3"
+            >
+              <div class="flex flex-col gap-0.5">
+                <p class="dt-card-text-sm leading-tight font-medium tabular-nums">
+                  {{ meetingRoomsInUse() }}
+                </p>
+                <p class="text-muted-foreground dt-card-text-xs leading-tight">
+                  Meeting Rooms in Use
+                </p>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <p class="dt-card-text-sm leading-tight font-medium tabular-nums">
+                  {{ meetingRoomsAvailable() }}
+                </p>
+                <p class="text-muted-foreground dt-card-text-xs leading-tight">Available Rooms</p>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section
+      hlmCard
+      size="sm"
+      class="ring-black/5 flex h-full flex-col overflow-hidden rounded-2xl shadow-sm ring-1 dt-dash-card"
+    >
+      <div hlmCardContent class="flex min-h-0 flex-1 flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="flex items-center gap-1.5 dt-text-md font-medium">
+            <ng-icon name="lucideTriangleAlert" size="15" class="text-dashboard-warning-strong" />
+            Attention Required
+          </h2>
+          <a
+            routerLink="/operations/maintenance"
+            class="text-dashboard-accent flex items-center gap-1 text-xs font-medium hover:underline"
+          >
+            View All
+            <ng-icon name="lucideArrowRight" size="12" />
+          </a>
+        </div>
+
+        @if (visibleAttentionItems().length === 0) {
+          <dt-empty-state
+            icon="✓"
+            title="Nothing needs attention"
+            description="All devices online and no urgent requests."
+            class="mt-4"
+          />
+        } @else {
+          <div class="mt-2 min-h-0 flex-1 overflow-y-auto">
+            <table class="w-full table-fixed border-separate border-spacing-0 text-xs">
+              <colgroup>
+                <col class="w-[46%]" />
+                <col class="w-[32%]" />
+                <col class="w-[22%]" />
+              </colgroup>
+              <thead>
+                <tr class="text-muted-foreground text-left">
+                  <th class="bg-card sticky top-0 border-b border-border pb-1.5 font-medium">
+                    Issue
+                  </th>
+                  <th class="bg-card sticky top-0 border-b border-border pb-1.5 font-medium">
+                    Location
+                  </th>
+                  <th
+                    class="bg-card sticky top-0 border-b border-border pb-1.5 text-right font-medium"
+                  >
+                    Severity
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of visibleAttentionItems(); track item.id) {
+                  <tr class="border-border/60 border-b last:border-0">
+                    <td class="py-1.5 pr-2">
+                      <a
+                        [routerLink]="item.link"
+                        class="hover:text-dashboard-accent flex min-w-0 items-center gap-1.5 font-medium"
+                      >
+                        <span
+                          class="h-1.5 w-1.5 shrink-0 rounded-full"
+                          [class]="severityDotClass(item.severity)"
+                        ></span>
+                        <span class="truncate">{{ item.label }}</span>
+                      </a>
+                    </td>
+                    <td class="text-muted-foreground py-1.5 pr-2 truncate">{{ item.location }}</td>
+                    <td class="py-1.5 text-right">
+                      <span
+                        class="rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap"
+                        [class]="severityToneClass(item.severity)"
+                      >
+                        {{ severityLabel(item.severity) }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,370 @@
+<div class="mx-auto mt-6 max-w-5xl">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-6">
+      <a routerLink="/operations/automations" class="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1 text-sm">
+        <ng-icon name="lucideChevronLeft" size="16" />
+        Back to Automations
+      </a>
+
+      <h1 class="text-foreground text-center text-2xl font-semibold">{{ automationId() ? 'Edit Automation' : 'New Automation' }}</h1>
+
+      <form class="flex flex-col gap-6" novalidate (submit)="$event.preventDefault(); onSubmit()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label class="flex flex-col gap-1.5 lg:col-span-2">
+            <span class="text-sm font-medium">Name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="automationForm.name"
+              [forceInvalid]="submitAttempted() && !automationForm.name().valid()"
+              placeholder="Enter name"
+            />
+            @if ((automationForm.name().touched() || submitAttempted()) && !automationForm.name().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ automationForm.name().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Building <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select
+              [value]="model().buildingId"
+              [itemToString]="buildingLabel"
+              (valueChange)="model.update(m => ({...m, buildingId: $event ?? '', floorId: '', spaceId: '', triggerDeviceId: '', triggerPropertyId: ''}))"
+            >
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(automationForm.buildingId().touched() || submitAttempted()) && !automationForm.buildingId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select building" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of buildingOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((automationForm.buildingId().touched() || submitAttempted()) && !automationForm.buildingId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ automationForm.buildingId().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Floor (optional)</span>
+            <hlm-select [value]="model().floorId" [itemToString]="floorLabel" (valueChange)="model.update(m => ({...m, floorId: $event ?? '', spaceId: ''}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Any floor" /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of floorOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Space (optional)</span>
+            <hlm-select [value]="model().spaceId" [itemToString]="spaceLabel" (valueChange)="model.update(m => ({...m, spaceId: $event ?? ''}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Any space" /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of spaceOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+          <label class="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-3">
+            <span class="text-sm font-medium">Description</span>
+            <textarea hlmInput [formField]="automationForm.description" rows="2" placeholder="What this automation does…" class="min-h-16 py-2"></textarea>
+          </label>
+        </div>
+
+        <div class="border-border border-t pt-5">
+          <h2 class="mb-2 text-sm font-medium">When (trigger)</h2>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label class="flex flex-col gap-1.5">
+              <span class="text-sm font-medium">Trigger type</span>
+              <hlm-select [value]="model().triggerType" [itemToString]="triggerTypeLabel" (valueChange)="model.update(m => ({...m, triggerType: $any($event)}))">
+                <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+                <hlm-select-content *hlmSelectPortal>
+                  @for (option of triggerTypeOptions; track option.value) {
+                    <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                  }
+                </hlm-select-content>
+              </hlm-select>
+            </label>
+
+            @if (model().triggerType === 'device-property') {
+              <label class="flex flex-col gap-1.5">
+                <span class="text-sm font-medium">Device</span>
+                <hlm-select [value]="model().triggerDeviceId" [itemToString]="deviceLabel" (valueChange)="model.update(m => ({...m, triggerDeviceId: $event ?? '', triggerPropertyId: ''}))">
+                  <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Select device" /></hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    @for (option of deviceOptions(); track option.value) {
+                      <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                    }
+                  </hlm-select-content>
+                </hlm-select>
+              </label>
+              <label class="flex flex-col gap-1.5">
+                <span class="text-sm font-medium">Property</span>
+                <hlm-select [value]="model().triggerPropertyId" [itemToString]="triggerPropertyLabel()" (valueChange)="model.update(m => ({...m, triggerPropertyId: $event ?? ''}))">
+                  <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Select property" /></hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    @for (option of triggerPropertyOptions(); track option.value) {
+                      <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                    }
+                  </hlm-select-content>
+                </hlm-select>
+              </label>
+              <label class="flex flex-col gap-1.5">
+                <span class="text-sm font-medium">Operator</span>
+                <hlm-select [value]="model().triggerOperator" [itemToString]="operatorLabel" (valueChange)="model.update(m => ({...m, triggerOperator: $any($event)}))">
+                  <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    @for (option of operatorOptions; track option.value) {
+                      <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                    }
+                  </hlm-select-content>
+                </hlm-select>
+              </label>
+              <label class="flex flex-col gap-1.5">
+                <span class="text-sm font-medium">Value</span>
+                <input
+                  hlmInput
+                  [value]="model().triggerValue"
+                  (input)="model.update(m => ({...m, triggerValue: $any($event.target).value}))"
+                />
+              </label>
+            }
+
+            @if (model().triggerType === 'time') {
+              <label class="flex flex-col gap-1.5">
+                <span class="text-sm font-medium">Time of day</span>
+                <input
+                  hlmInput
+                  type="time"
+                  [value]="model().triggerTimeOfDay"
+                  (input)="model.update(m => ({...m, triggerTimeOfDay: $any($event.target).value}))"
+                />
+              </label>
+            }
+
+            @if (model().triggerType === 'manual') {
+              <p class="text-muted-foreground self-end text-sm">This automation only runs when someone taps "Run Now".</p>
+            }
+
+            @if (model().triggerType === 'occupancy-changed') {
+              <label class="flex flex-col gap-1.5">
+                <span class="text-sm font-medium">Becomes</span>
+                <hlm-select
+                  [value]="model().triggerOccupancyStatus"
+                  (valueChange)="model.update(m => ({...m, triggerOccupancyStatus: $any($event) ?? 'occupied'}))"
+                >
+                  <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    <hlm-select-item value="occupied">Occupied</hlm-select-item>
+                    <hlm-select-item value="vacant">Vacant</hlm-select-item>
+                  </hlm-select-content>
+                </hlm-select>
+              </label>
+              <p class="text-muted-foreground self-end text-sm">
+                Watches the Space selected above — pick one for this trigger to mean anything.
+              </p>
+            }
+          </div>
+        </div>
+
+        <div class="border-border border-t pt-5">
+          <div class="mb-2 flex items-center justify-between">
+            <h2 class="text-sm font-medium">If (conditions, optional)</h2>
+            <button hlmBtn variant="secondary" size="sm" type="button" (click)="addCondition()">Add Condition</button>
+          </div>
+          @if (model().conditions.length === 0) {
+            <p class="text-muted-foreground text-sm">No extra conditions — the trigger alone is enough.</p>
+          } @else {
+            <div class="flex flex-col gap-2">
+              @for (condition of model().conditions; track $index) {
+                <div class="grid grid-cols-1 items-end gap-2 sm:grid-cols-[1fr_1fr_120px_1fr_auto]">
+                  <label class="flex flex-col gap-1">
+                    <span class="text-muted-foreground text-xs">Device</span>
+                    <hlm-select [value]="condition.deviceId" [itemToString]="deviceLabel" (valueChange)="updateCondition($index, { deviceId: $event ?? '', propertyId: '' })">
+                      <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Device" /></hlm-select-trigger>
+                      <hlm-select-content *hlmSelectPortal>
+                        @for (option of deviceOptions(); track option.value) {
+                          <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                        }
+                      </hlm-select-content>
+                    </hlm-select>
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="text-muted-foreground text-xs">Property</span>
+                    <hlm-select [value]="condition.propertyId" [itemToString]="propertyLabelFor(condition.deviceId)" (valueChange)="updateCondition($index, { propertyId: $event ?? '' })">
+                      <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Property" /></hlm-select-trigger>
+                      <hlm-select-content *hlmSelectPortal>
+                        @for (option of propertyOptionsFor(condition.deviceId); track option.value) {
+                          <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                        }
+                      </hlm-select-content>
+                    </hlm-select>
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="text-muted-foreground text-xs">Operator</span>
+                    <hlm-select [value]="condition.operator" [itemToString]="operatorLabel" (valueChange)="updateCondition($index, { operator: $any($event) })">
+                      <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+                      <hlm-select-content *hlmSelectPortal>
+                        @for (option of operatorOptions; track option.value) {
+                          <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                        }
+                      </hlm-select-content>
+                    </hlm-select>
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="text-muted-foreground text-xs">Value</span>
+                    <input
+                      hlmInput
+                      [value]="condition.value"
+                      (input)="updateCondition($index, { value: $any($event.target).value })"
+                    />
+                  </label>
+                  <button hlmBtn variant="ghost" size="sm" type="button" (click)="removeCondition($index)">Remove</button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="border-border border-t pt-5">
+          <div class="mb-2 flex items-center justify-between">
+            <h2 class="text-sm font-medium">Then (actions)</h2>
+            <button hlmBtn variant="secondary" size="sm" type="button" (click)="addAction()">Add Action</button>
+          </div>
+          @if (model().actions.length === 0) {
+            <p class="text-muted-foreground text-sm">No actions yet — add at least one.</p>
+          } @else {
+            <div class="flex flex-col gap-3">
+              @for (action of model().actions; track $index) {
+                <div class="border-border rounded-control border p-3">
+                  <div class="mb-2 flex items-center justify-between gap-2">
+                    <hlm-select [value]="action.type" [itemToString]="actionTypeLabel" (valueChange)="updateAction($index, { type: $any($event) })">
+                      <hlm-select-trigger class="w-56"><hlm-select-value /></hlm-select-trigger>
+                      <hlm-select-content *hlmSelectPortal>
+                        @for (option of actionTypeOptions; track option.value) {
+                          <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                        }
+                      </hlm-select-content>
+                    </hlm-select>
+                    <button hlmBtn variant="ghost" size="sm" type="button" (click)="removeAction($index)">Remove</button>
+                  </div>
+
+                  @if (action.type === 'device-command') {
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <hlm-select [value]="action.deviceId ?? ''" [itemToString]="deviceLabel" (valueChange)="updateAction($index, { deviceId: $event ?? '', propertyId: '' })">
+                        <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Device" /></hlm-select-trigger>
+                        <hlm-select-content *hlmSelectPortal>
+                          @for (option of deviceOptions(); track option.value) {
+                            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                          }
+                        </hlm-select-content>
+                      </hlm-select>
+                      <hlm-select [value]="action.propertyId ?? ''" [itemToString]="propertyLabelFor(action.deviceId ?? '')" (valueChange)="updateAction($index, { propertyId: $event ?? '' })">
+                        <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Property" /></hlm-select-trigger>
+                        <hlm-select-content *hlmSelectPortal>
+                          @for (option of propertyOptionsFor(action.deviceId ?? ''); track option.value) {
+                            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                          }
+                        </hlm-select-content>
+                      </hlm-select>
+                      <input
+                        hlmInput
+                        placeholder="New value"
+                        [value]="action.value ?? ''"
+                        (input)="updateAction($index, { value: $any($event.target).value })"
+                      />
+                    </div>
+                  }
+
+                  @if (action.type === 'notification') {
+                    <input
+                      hlmInput
+                      placeholder="Notification message"
+                      [value]="action.message ?? ''"
+                      (input)="updateAction($index, { message: $any($event.target).value })"
+                    />
+                  }
+
+                  @if (action.type === 'maintenance') {
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_180px]">
+                      <input
+                        hlmInput
+                        placeholder="Maintenance title"
+                        [value]="action.maintenanceTitle ?? ''"
+                        (input)="updateAction($index, { maintenanceTitle: $any($event.target).value })"
+                      />
+                      <hlm-select [value]="maintenancePriorityValue(action)" [itemToString]="priorityLabel" (valueChange)="updateAction($index, { maintenancePriority: $any($event) })">
+                        <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+                        <hlm-select-content *hlmSelectPortal>
+                          @for (option of priorityOptions; track option.value) {
+                            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                          }
+                        </hlm-select-content>
+                      </hlm-select>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="border-border border-t pt-5">
+          <div class="mb-2 flex items-center gap-2">
+            <hlm-checkbox class="[&_button]:cursor-pointer!" [checked]="scheduleEnabled()" (checkedChange)="toggleScheduleEnabled($event)" />
+            <h2 class="text-sm font-medium">When Active — restrict to specific days/hours</h2>
+          </div>
+          @if (model().schedule; as schedule) {
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-wrap gap-3">
+                @for (day of dayLabels; track day; let dayIndex = $index) {
+                  <label class="flex items-center gap-1.5 text-sm">
+                    <hlm-checkbox class="[&_button]:cursor-pointer!" [checked]="schedule.days.includes(dayIndex)" (checkedChange)="toggleScheduleDay(dayIndex, $event)" />
+                    {{ day }}
+                  </label>
+                }
+              </div>
+              <div class="grid grid-cols-2 gap-3 sm:w-80">
+                <label class="flex flex-col gap-1">
+                  <span class="text-muted-foreground text-xs">Start hour</span>
+                  <hlm-select [value]="schedule.startHour.toString()" (valueChange)="setScheduleHour('startHour', $event ?? '0')">
+                    <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+                    <hlm-select-content *hlmSelectPortal>
+                      @for (hour of hours; track hour) {
+                        <hlm-select-item [value]="hour.toString()">{{ hour }}:00</hlm-select-item>
+                      }
+                    </hlm-select-content>
+                  </hlm-select>
+                </label>
+                <label class="flex flex-col gap-1">
+                  <span class="text-muted-foreground text-xs">End hour</span>
+                  <hlm-select [value]="schedule.endHour.toString()" (valueChange)="setScheduleHour('endHour', $event ?? '0')">
+                    <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+                    <hlm-select-content *hlmSelectPortal>
+                      @for (hour of hours; track hour) {
+                        <hlm-select-item [value]="hour.toString()">{{ hour }}:00</hlm-select-item>
+                      }
+                    </hlm-select-content>
+                  </hlm-select>
+                </label>
+              </div>
+            </div>
+          } @else {
+            <p class="text-muted-foreground text-sm">Active any time.</p>
+          }
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button hlmBtn type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Save Automation
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

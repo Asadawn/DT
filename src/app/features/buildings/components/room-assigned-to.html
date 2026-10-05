@@ -1,0 +1,54 @@
+@if (compact()) {
+  <div hlmCard size="sm">
+    <div hlmCardContent>
+      <div class="mb-2 flex items-center justify-between gap-2">
+        <h3 class="text-xs font-medium">Assigned To</h3>
+        <a routerLink="/operations/access-assignments" class="text-merik shrink-0 text-xs font-medium hover:underline">View All →</a>
+      </div>
+
+      @if (primary(); as assignment) {
+        <a
+          [routerLink]="['/operations/access-assignments', assignment.id]"
+          class="hover:bg-accent -mx-1 flex items-start gap-2 rounded-control px-1 py-1"
+        >
+          <hlm-avatar size="sm" class="shrink-0">
+            <span hlmAvatarFallback class="bg-merik/10 text-merik">{{ initials(assignment.principalName) }}</span>
+          </hlm-avatar>
+          <div class="min-w-0">
+            <div class="truncate text-xs font-medium">{{ assignment.principalName }}</div>
+            <div class="text-muted-foreground text-xs leading-snug">{{ assignment.roleLabel }}</div>
+          </div>
+        </a>
+        @if (extraCount() > 0) {
+          <p class="text-muted-foreground mt-1 text-xs">+{{ extraCount() }} more</p>
+        }
+      } @else {
+        <p class="text-muted-foreground text-xs">No one currently has scoped access.</p>
+      }
+    </div>
+  </div>
+} @else {
+  <app-room-stat-card label="Assigned To">
+    <a header-action routerLink="/operations/access-assignments" class="text-merik text-xs font-medium hover:underline">View All →</a>
+
+    @if (primary(); as assignment) {
+      <a
+        [routerLink]="['/operations/access-assignments', assignment.id]"
+        class="hover:bg-accent -mx-1 flex min-w-0 items-center gap-3 rounded-control px-1 py-0.5"
+      >
+        <hlm-avatar size="sm">
+          <span hlmAvatarFallback class="bg-merik/10 text-merik">{{ initials(assignment.principalName) }}</span>
+        </hlm-avatar>
+        <div class="min-w-0">
+          <div class="truncate text-xs font-medium">{{ assignment.principalName }}</div>
+          <div class="text-muted-foreground truncate text-xs">{{ assignment.roleLabel }}</div>
+        </div>
+      </a>
+      @if (extraCount() > 0) {
+        <p class="text-muted-foreground mt-1 text-xs">+{{ extraCount() }} more</p>
+      }
+    } @else {
+      <p class="text-muted-foreground text-xs">No one currently has scoped access to this room.</p>
+    }
+  </app-room-stat-card>
+}

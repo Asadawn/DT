@@ -1,0 +1,128 @@
+<div class="mx-auto mt-6 max-w-2xl">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-6">
+      <a routerLink="/access/users" class="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1 text-sm">
+        <ng-icon name="lucideChevronLeft" size="16" />
+        Back to Users
+      </a>
+
+      <h1 class="text-foreground text-center text-2xl font-semibold">{{ userId() ? 'Edit User' : 'New User' }}</h1>
+
+      <form class="flex flex-col gap-5" novalidate (submit)="$event.preventDefault(); onSubmit()">
+        <div class="flex flex-col items-center gap-2">
+          <div class="relative shrink-0">
+            <hlm-avatar size="lg" class="h-20! w-20!">
+              @if (avatarUrl(); as photo) {
+                <img hlmAvatarImage [src]="photo" alt="" />
+              }
+              <span hlmAvatarFallback class="bg-primary text-primary-foreground text-3xl">{{ initials() }}</span>
+            </hlm-avatar>
+            <button
+              hlmBtn
+              variant="secondary"
+              size="icon-sm"
+              type="button"
+              class="border-border absolute right-0 bottom-0 cursor-pointer rounded-full border shadow-sm"
+              aria-label="Add photo"
+              (click)="avatarInput.click()"
+            >
+              <ng-icon name="lucideCamera" size="16" />
+            </button>
+            <input #avatarInput type="file" accept="image/*" class="hidden" (change)="onAvatarFileSelected($event)" />
+          </div>
+          @if (avatarUrl()) {
+            <button hlmBtn variant="ghost" size="sm" type="button" class="text-muted-foreground cursor-pointer px-2" (click)="removePhoto()">
+              <ng-icon name="lucideX" size="12" class="mr-1" />
+              Remove photo
+            </button>
+          }
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="userForm.name"
+              [forceInvalid]="submitAttempted() && !userForm.name().valid()"
+              placeholder="Enter name"
+            />
+            @if ((userForm.name().touched() || submitAttempted()) && !userForm.name().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ userForm.name().errors()[0]?.message }}</span>
+            }
+          </label>
+
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Email <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="userForm.email"
+              [forceInvalid]="submitAttempted() && !userForm.email().valid()"
+              placeholder="Enter email address"
+            />
+            @if ((userForm.email().touched() || submitAttempted()) && !userForm.email().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ userForm.email().errors()[0]?.message }}</span>
+            }
+          </label>
+
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Role <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().roleId" [itemToString]="roleLabel" (valueChange)="model.update(m => ({...m, roleId: $event ?? ''}))">
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(userForm.roleId().touched() || submitAttempted()) && !userForm.roleId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select role" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of roleOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((userForm.roleId().touched() || submitAttempted()) && !userForm.roleId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ userForm.roleId().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Status</span>
+            <hlm-select [value]="model().status" [itemToString]="statusOptionLabel" (valueChange)="model.update(m => ({...m, status: $any($event)}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of statusOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+        </div>
+
+        <div>
+          <span class="mb-1.5 block text-sm font-medium">Building Scope</span>
+          <div class="flex flex-wrap gap-3">
+            @for (option of buildingOptions(); track option.value) {
+              <label class="flex items-center gap-2 text-sm">
+                <hlm-checkbox
+                  class="[&_button]:cursor-pointer!"
+                  [checked]="buildingScope().includes(option.value)"
+                  (checkedChange)="toggleBuilding(option.value, $event)"
+                />
+                {{ option.label }}
+              </label>
+            }
+          </div>
+          <p class="text-muted-foreground mt-1.5 text-xs">Leave empty for portfolio-wide access.</p>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button hlmBtn type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Save User
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

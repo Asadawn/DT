@@ -1,0 +1,40 @@
+<dt-page-header title="Users" description="Accounts, roles and building scope">
+  <div actions>
+    <a *hasPermission="'users'; action: 'create'" hlmBtn [routerLink]="['/access/users/new']">New User</a>
+  </div>
+</dt-page-header>
+
+@if (selectedCount() > 0) {
+  <div class="rounded-card border-primary bg-primary/5 mb-3 flex flex-wrap items-center gap-3 border px-4 py-2.5">
+    <span class="text-sm font-medium">{{ selectedCount() }} selected</span>
+    <div class="ml-auto flex gap-2">
+      <button hlmBtn variant="secondary" size="sm" [disabled]="bulkPending()" (click)="bulkSetStatus('active')">
+        @if (bulkPending()) {
+          <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+        }
+        Activate
+      </button>
+      <button hlmBtn variant="destructive" size="sm" [disabled]="bulkPending()" (click)="bulkSetStatus('disabled')">
+        @if (bulkPending()) {
+          <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+        }
+        Disable
+      </button>
+      <button hlmBtn variant="ghost" size="sm" (click)="clearSelection()">Clear</button>
+    </div>
+  </div>
+}
+
+<dt-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [loading]="loading()"
+  [selectable]="true"
+  [(selected)]="selectedIds"
+  emptyTitle="No users"
+  (rowClick)="openUser($event)"
+>
+  <ng-template dtCell="status" let-row>
+    <dt-status-chip [status]="row.status" />
+  </ng-template>
+</dt-data-table>

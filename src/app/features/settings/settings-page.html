@@ -1,0 +1,169 @@
+<dt-page-header title="Settings" description="Account and preferences" />
+
+<div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+  <div class="flex flex-col gap-6">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-5">
+      <div class="flex items-center gap-2">
+        <ng-icon name="lucideUserCircle" size="18" class="text-muted-foreground" />
+        <h2 class="text-sm font-medium">Account</h2>
+      </div>
+
+      @if (currentUser(); as user) {
+        @if (!editingProfile()) {
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <hlm-avatar size="lg" class="h-16! w-16!">
+                @if (avatarPreview(); as photo) {
+                  <img hlmAvatarImage [src]="photo" alt="" />
+                }
+                <span hlmAvatarFallback class="bg-primary text-primary-foreground text-base">{{ initials() }}</span>
+              </hlm-avatar>
+              <div class="min-w-0">
+                <div class="truncate text-sm font-medium">{{ user.displayName }}</div>
+                <div class="text-muted-foreground truncate text-xs">{{ user.email }}</div>
+              </div>
+            </div>
+            <button hlmBtn variant="outline" size="sm" type="button" class="cursor-pointer" (click)="startEditProfile()">Edit profile</button>
+          </div>
+        } @else {
+          <form class="flex flex-col gap-4" (submit)="$event.preventDefault(); saveProfile()">
+            <div class="flex items-center gap-4">
+              <div class="relative shrink-0">
+                <hlm-avatar size="lg" class="h-16! w-16!">
+                  @if (avatarPreview(); as photo) {
+                    <img hlmAvatarImage [src]="photo" alt="" />
+                  }
+                  <span hlmAvatarFallback class="bg-primary text-primary-foreground text-base">{{ initials() }}</span>
+                </hlm-avatar>
+                <button
+                  hlmBtn
+                  variant="secondary"
+                  size="icon-sm"
+                  type="button"
+                  class="border-border absolute -right-1 -bottom-1 cursor-pointer rounded-full border shadow-sm"
+                  aria-label="Change photo"
+                  (click)="avatarInput.click()"
+                >
+                  <ng-icon name="lucideCamera" size="14" />
+                </button>
+                <input #avatarInput type="file" accept="image/*" class="hidden" (change)="onAvatarFileSelected($event)" />
+              </div>
+              <div class="flex flex-col items-start gap-0.5">
+                <button hlmBtn variant="ghost" size="sm" type="button" class="cursor-pointer px-2" (click)="avatarInput.click()">Change photo</button>
+                @if (avatarPreview()) {
+                  <button hlmBtn variant="ghost" size="sm" type="button" class="text-muted-foreground cursor-pointer px-2" (click)="removePhoto()">
+                    <ng-icon name="lucideX" size="12" class="mr-1" />
+                    Remove photo
+                  </button>
+                }
+              </div>
+            </div>
+
+            <label class="flex flex-col gap-1">
+              <span class="text-sm font-medium">Name <span class="text-dashboard-danger-strong">*</span></span>
+              <input hlmInput [formField]="profileForm.displayName" />
+              @if (profileForm.displayName().touched() && !profileForm.displayName().valid()) {
+                <span class="text-xs text-red-600">{{ profileForm.displayName().errors()[0]?.message }}</span>
+              }
+            </label>
+            <div class="flex justify-end gap-2">
+              <button hlmBtn variant="outline" type="button" class="cursor-pointer" [disabled]="savingProfile()" (click)="cancelEditProfile()">Cancel</button>
+              <button hlmBtn type="submit" class="cursor-pointer" [disabled]="savingProfile()">
+                @if (savingProfile()) {
+                  <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                }
+                Save
+              </button>
+            </div>
+          </form>
+        }
+
+        <div class="border-border flex items-center justify-between border-t pt-4">
+          <div>
+            <div class="text-sm font-medium">Role</div>
+            <div class="text-muted-foreground text-xs">{{ role()?.description ?? 'No role assigned.' }}</div>
+          </div>
+          <span class="bg-muted rounded-control px-2 py-1 text-xs font-medium">{{ role()?.name ?? '—' }}</span>
+        </div>
+
+        <div class="border-border flex justify-end border-t pt-4">
+          <button hlmBtn variant="destructive" type="button" class="cursor-pointer" (click)="signOut()">Sign out</button>
+        </div>
+      } @else {
+        <p class="text-muted-foreground text-sm">Not signed in.</p>
+      }
+    </div>
+  </div>
+
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-4">
+      <div class="flex items-center gap-2">
+        <ng-icon name="lucideLock" size="18" class="text-muted-foreground" />
+        <h2 class="text-sm font-medium">Change password</h2>
+      </div>
+
+      <form class="flex flex-col gap-3" (submit)="$event.preventDefault(); changePassword()">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Current password <span class="text-dashboard-danger-strong">*</span></span>
+          <input hlmInput type="password" [formField]="passwordForm.currentPassword" />
+          @if (passwordForm.currentPassword().touched() && !passwordForm.currentPassword().valid()) {
+            <span class="text-xs text-red-600">{{ passwordForm.currentPassword().errors()[0]?.message }}</span>
+          }
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">New password <span class="text-dashboard-danger-strong">*</span></span>
+          <input hlmInput type="password" [formField]="passwordForm.newPassword" />
+          @if (passwordForm.newPassword().touched() && !passwordForm.newPassword().valid()) {
+            <span class="text-xs text-red-600">{{ passwordForm.newPassword().errors()[0]?.message }}</span>
+          }
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Confirm new password <span class="text-dashboard-danger-strong">*</span></span>
+          <input hlmInput type="password" [formField]="passwordForm.confirmPassword" />
+          @if (passwordForm.confirmPassword().touched() && !passwordForm.confirmPassword().valid()) {
+            <span class="text-xs text-red-600">{{ passwordForm.confirmPassword().errors()[0]?.message }}</span>
+          }
+        </label>
+        <div class="flex items-center justify-end gap-3 pt-1">
+          @if (passwordChanged()) {
+            <span class="text-xs text-emerald-600">Password updated</span>
+          }
+          <button hlmBtn type="submit" class="cursor-pointer" [disabled]="changingPassword()">
+            @if (changingPassword()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Update password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  </div>
+
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <ng-icon name="lucideBell" size="18" class="text-muted-foreground" />
+          <h2 class="text-sm font-medium">Notification preferences</h2>
+        </div>
+        <p class="text-muted-foreground mt-1 text-xs">Controls what actively alerts you (the bell icon) — turning a type off never deletes past notifications from your history.</p>
+      </div>
+
+      @for (option of notificationTypeOptions; track option.type) {
+        <div class="border-border flex items-center justify-between gap-3 border-t pt-4 first:border-t-0 first:pt-0">
+          <div class="min-w-0">
+            <div class="text-sm font-medium">{{ option.label }}</div>
+            <div class="text-muted-foreground text-xs">{{ option.description }}</div>
+          </div>
+          <hlm-switch
+            class="cursor-pointer"
+            [checked]="isNotificationTypeEnabled(option.type)"
+            (checkedChange)="setNotificationTypeEnabled(option.type, $event)"
+          />
+        </div>
+      }
+    </div>
+  </div>
+</div>

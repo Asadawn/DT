@@ -1,0 +1,133 @@
+<dt-page-header title="Occupancy" description="Which spaces are occupied, reserved, or vacant right now">
+  <div actions>
+    <a *hasPermission="'bookings'; action: 'create'" hlmBtn [routerLink]="['/operations/occupancy/bookings/new']">New Booking</a>
+  </div>
+</dt-page-header>
+
+<div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <dt-kpi-card label="Total Spaces" [value]="kpiCounts().total" ngIcon="lucideLayoutGrid" [delta]="2" deltaLabel="vs last 7 days" />
+  <dt-kpi-card label="Occupied" [value]="kpiCounts().occupied" ngIcon="lucideUsers" [delta]="kpiOccupiedPercent()" deltaLabel="of total spaces" />
+  <dt-kpi-card
+    label="Reserved"
+    [value]="kpiCounts().reserved"
+    ngIcon="lucideCalendarClock"
+    tone="muted"
+    [delta]="kpiReservedPercent()"
+    deltaLabel="of total spaces"
+  />
+  <dt-kpi-card
+    label="Vacant"
+    [value]="kpiCounts().vacant"
+    ngIcon="lucideDoorOpen"
+    tone="muted"
+    [delta]="kpiVacantPercent()"
+    deltaLabel="of total spaces"
+  />
+</div>
+
+<div hlmCard size="sm" class="mb-3">
+  <div hlmCardContent>
+    <dt-filter-bar [activeFilterCount]="activeFilterCount()" class="block">
+      <dt-search-input primary placeholder="Search spaces or guests…" [value]="search()" (valueChange)="search.set($event)" />
+      <hlm-select inline [value]="status()" [itemToString]="statusLabel" (valueChange)="status.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All statuses" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of statusOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="buildingId()" [itemToString]="buildingLabel" (valueChange)="buildingId.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All buildings" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of buildingOptions(); track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <button
+        inline
+        type="button"
+        class="text-muted-foreground hover:text-foreground ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!hasActiveFilters()"
+        (click)="resetFilters()"
+      >
+        <ng-icon name="lucideRotateCcw" size="14" />
+        Reset
+      </button>
+    </dt-filter-bar>
+  </div>
+</div>
+
+<dt-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  emptyTitle="No spaces match these filters"
+  (rowClick)="openSpace($event)"
+>
+  <ng-template dtCell="status" let-row>
+    <dt-status-chip [status]="row.reading.status" />
+  </ng-template>
+  <ng-template dtCell="guest" let-row>
+    {{ row.reading.guestName ?? '—' }}
+  </ng-template>
+  <ng-template dtCell="updated" let-row>
+    {{ row.reading.lastUpdatedAt | date: 'short' }}
+  </ng-template>
+  <ng-template dtCell="actions" let-row>
+    <div class="flex items-center justify-end gap-1">
+      @if (row.reading.bookingId; as bookingId) {
+        <a
+          hlmBtn
+          variant="ghost"
+          size="icon"
+          hlmTooltip="View booking"
+          aria-label="View booking"
+          [routerLink]="['/operations/occupancy/bookings', bookingId]"
+          (click)="$event.stopPropagation()"
+        >
+          <ng-icon name="lucideEye" size="16" />
+        </a>
+      }
+      <div *hasPermission="'bookings'; action: 'edit'" class="flex items-center gap-1">
+        @if (row.reading.status === 'reserved') {
+          <a
+            hlmBtn
+            variant="ghost"
+            size="icon"
+            hlmTooltip="Edit booking"
+            aria-label="Edit booking"
+            [routerLink]="['/operations/occupancy/bookings', row.reading.bookingId, 'edit']"
+            (click)="$event.stopPropagation()"
+          >
+            <ng-icon name="lucideSquarePen" size="16" />
+          </a>
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon"
+            hlmTooltip="Check in"
+            aria-label="Check in"
+            [disabled]="bookingService.isPending(row.reading.bookingId!)"
+            (click)="checkIn(row, $event)"
+          >
+            <ng-icon name="lucideLogIn" size="16" />
+          </button>
+        }
+        @if (row.reading.status === 'occupied') {
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon"
+            hlmTooltip="Check out"
+            aria-label="Check out"
+            [disabled]="bookingService.isPending(row.reading.bookingId!)"
+            (click)="checkOut(row, $event)"
+          >
+            <ng-icon name="lucideLogOut" size="16" />
+          </button>
+        }
+      </div>
+    </div>
+  </ng-template>
+</dt-data-table>

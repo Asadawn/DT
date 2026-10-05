@@ -1,0 +1,128 @@
+<div class="rounded-card border-border overflow-hidden border bg-white">
+  @if (loading()) {
+    <div class="flex flex-col gap-2 p-4">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="h-8"><dt-skeleton /></div>
+      }
+    </div>
+  } @else if (error()) {
+    <dt-error-state (retry)="retry.emit()" />
+  } @else if (rows().length === 0) {
+    <dt-empty-state [title]="emptyTitle()" [description]="emptyDescription()" />
+  } @else if (isCardMode()) {
+    <ul class="divide-border divide-y">
+      @for (row of pagedRows(); track row.id) {
+        <li class="flex cursor-pointer flex-col gap-1 px-4 py-3" (click)="rowClick.emit(row)">
+          <div class="flex items-start gap-2">
+            @if (selectable()) {
+              <hlm-checkbox
+                class="mt-0.5"
+                [checked]="isSelected(row.id)"
+                (checkedChange)="toggleRow(row.id)"
+                (click)="$event.stopPropagation()"
+                aria-label="Select row"
+              />
+            }
+            @if (primaryColumn(); as primary) {
+              <div class="min-w-0 flex-1 text-sm font-medium">
+                @if (templateFor(primary.id); as tpl) {
+                  <ng-container
+                    [ngTemplateOutlet]="tpl.templateRef"
+                    [ngTemplateOutletContext]="{ $implicit: row }"
+                  />
+                } @else {
+                  {{ primary.accessor(row) }}
+                }
+              </div>
+            }
+          </div>
+          <div class="flex flex-wrap gap-x-4 gap-y-1">
+            @for (column of secondaryColumns(); track column.id) {
+              <div class="text-muted-foreground flex items-center gap-1 text-xs">
+                <span>{{ column.label }}:</span>
+                @if (templateFor(column.id); as tpl) {
+                  <ng-container
+                    [ngTemplateOutlet]="tpl.templateRef"
+                    [ngTemplateOutletContext]="{ $implicit: row }"
+                  />
+                } @else {
+                  <span>{{ column.accessor(row) ?? '—' }}</span>
+                }
+              </div>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-border bg-primary/5 border-b">
+          <tr>
+            @if (selectable()) {
+              <th class="w-8 px-4 py-2">
+                <hlm-checkbox
+                  [checked]="pageAllSelected()"
+                  [indeterminate]="pageSomeSelected()"
+                  (checkedChange)="toggleAllOnPage()"
+                  aria-label="Select all rows on this page"
+                />
+              </th>
+            }
+            @for (column of visibleColumns(); track column.id) {
+              <th
+                class="px-4 py-2 font-medium whitespace-nowrap"
+                [class.cursor-pointer]="column.sortable"
+                [class.text-center]="column.align === 'center'"
+                [class.text-right]="column.align === 'end'"
+                [class.text-left]="!column.align || column.align === 'start'"
+                (click)="toggleSort(column)"
+              >
+                {{ column.label }} {{ sortIndicator(column.id) }}
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody class="divide-border divide-y">
+          @for (row of pagedRows(); track row.id) {
+            <tr class="hover:bg-primary/5 cursor-pointer" (click)="rowClick.emit(row)">
+              @if (selectable()) {
+                <td class="px-4 py-2.5" (click)="$event.stopPropagation()">
+                  <hlm-checkbox
+                    [checked]="isSelected(row.id)"
+                    (checkedChange)="toggleRow(row.id)"
+                    aria-label="Select row"
+                  />
+                </td>
+              }
+              @for (column of visibleColumns(); track column.id) {
+                <td
+                  class="px-4 py-2.5"
+                  [class.text-center]="column.align === 'center'"
+                  [class.text-right]="column.align === 'end'"
+                >
+                  @if (templateFor(column.id); as tpl) {
+                    <ng-container
+                      [ngTemplateOutlet]="tpl.templateRef"
+                      [ngTemplateOutletContext]="{ $implicit: row }"
+                    />
+                  } @else {
+                    {{ column.accessor(row) ?? '—' }}
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (!loading() && !error() && rows().length > pageSize()) {
+    <hlm-numbered-pagination
+      [(currentPage)]="page"
+      [(itemsPerPage)]="pageSize"
+      [totalItems]="rows().length"
+    />
+  }
+</div>

@@ -1,1 +1,116 @@
-/* You can add global styles to this file, and also import other style files */
+@use 'styles/tokens';
+@use 'styles/typography';
+
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css';
+
+@import '@spartan-ng/brain/hlm-tailwind-preset.css';
+
+@theme {
+  --color-shell: var(--dt-color-shell);
+  --color-dark-feature: var(--dt-color-dark-feature);
+  --color-merik: var(--dt-color-merik);
+  --color-merik-light: var(--dt-color-merik-light);
+  --color-canvas: var(--dt-color-canvas);
+  --color-dashboard-accent: var(--dt-color-dashboard-accent);
+  --color-dashboard-danger: var(--dt-color-dashboard-danger);
+  --color-dashboard-danger-strong: var(--dt-color-dashboard-danger-strong);
+  --color-dashboard-warning: var(--dt-color-dashboard-warning);
+  --color-dashboard-warning-soft: var(--dt-color-dashboard-warning-soft);
+  --color-dashboard-warning-strong: var(--dt-color-dashboard-warning-strong);
+  --color-dashboard-info: var(--dt-color-dashboard-info);
+  --color-dashboard-neutral: var(--dt-color-dashboard-neutral);
+  --color-dashboard-neutral-soft: var(--dt-color-dashboard-neutral-soft);
+
+  --radius-control: var(--dt-radius-control);
+  --radius-card: var(--dt-radius-card);
+  --radius-card-lg: var(--dt-radius-card-lg);
+  --radius-card-feature: var(--dt-radius-card-feature);
+}
+
+:root {
+  color-scheme: light;
+
+  --font-sans: var(--dt-font-sans);
+
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: var(--dt-radius-control);
+  --background: var(--dt-color-canvas);
+  --foreground: var(--dt-color-dark-feature);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--dt-color-dark-feature);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--dt-color-dark-feature);
+  --primary: var(--dt-color-merik);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: var(--dt-color-dark-feature);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: var(--dt-color-dark-feature);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: var(--dt-color-merik);
+
+  --sidebar: var(--dt-color-shell);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: var(--dt-color-merik-light);
+  --sidebar-primary-foreground: var(--dt-color-dark-feature);
+  --sidebar-accent: color-mix(in oklab, white 8%, var(--dt-color-shell));
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: color-mix(in oklab, white 12%, var(--dt-color-shell));
+  --sidebar-ring: var(--dt-color-merik-light);
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.92 0.004 286.32);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

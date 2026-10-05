@@ -39,6 +39,19 @@ testem.log
 /typings
 __screenshots__/
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # System files
 .DS_Store
 Thumbs.db
+
+# Internal planning/spec docs — not part of the shipped repo
+/CLAUDE.md
+/DIGITAL_TWIN_ANGULAR22_SIGNAL_ARCHITECTURE (1).md
+/DIGITAL_TWIN_REWRITE_MASTER_BLUEPRINT_v2 (1).md
+/docs/
+src/app/domain/*/README.md

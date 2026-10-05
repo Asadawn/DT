@@ -1,0 +1,83 @@
+import type { Role } from './access.types';
+
+const ALL_ACTIONS: Role['permissions'][number]['actions'] = ['view', 'create', 'edit', 'delete'];
+const VIEW_ONLY: Role['permissions'][number]['actions'] = ['view'];
+
+export const ROLE_FIXTURES: Role[] = [
+  {
+    id: 'r1',
+    name: 'Organization Administrator',
+    description: 'Full portfolio visibility and configuration access.',
+    permissions: [
+      { resource: 'buildings', actions: ALL_ACTIONS },
+      { resource: 'devices', actions: ALL_ACTIONS },
+      { resource: 'automations', actions: ALL_ACTIONS },
+      { resource: 'maintenance', actions: ALL_ACTIONS },
+      { resource: 'vendors', actions: ALL_ACTIONS },
+      { resource: 'access-assignments', actions: ALL_ACTIONS },
+      { resource: 'schedules', actions: ALL_ACTIONS },
+      { resource: 'analytics', actions: VIEW_ONLY },
+      { resource: 'occupancy', actions: VIEW_ONLY },
+      { resource: 'bookings', actions: ALL_ACTIONS },
+      { resource: 'users', actions: ALL_ACTIONS },
+      { resource: 'roles', actions: ALL_ACTIONS },
+    ],
+  },
+  {
+    id: 'r2',
+    name: 'Building Manager',
+    description: 'Building status, maintenance and spatial investigation.',
+    permissions: [
+      { resource: 'buildings', actions: ['view', 'edit'] },
+      { resource: 'devices', actions: ['view', 'edit'] },
+      { resource: 'automations', actions: ['view', 'create', 'edit'] },
+      { resource: 'maintenance', actions: ALL_ACTIONS },
+      { resource: 'vendors', actions: ['view', 'create', 'edit'] },
+      { resource: 'access-assignments', actions: ['view', 'create', 'edit'] },
+      { resource: 'schedules', actions: ['view', 'create', 'edit'] },
+      { resource: 'analytics', actions: VIEW_ONLY },
+      { resource: 'occupancy', actions: VIEW_ONLY },
+      { resource: 'bookings', actions: ['view', 'create', 'edit'] },
+      { resource: 'users', actions: VIEW_ONLY },
+      { resource: 'roles', actions: [] },
+    ],
+  },
+  {
+    id: 'r3',
+    name: 'Internal Technician',
+    description: 'Live equipment state, telemetry, trends, commands and schedules.',
+    permissions: [
+      { resource: 'buildings', actions: VIEW_ONLY },
+      { resource: 'devices', actions: ['view', 'edit'] },
+      { resource: 'automations', actions: VIEW_ONLY },
+      { resource: 'maintenance', actions: ['view', 'create', 'edit'] },
+      { resource: 'vendors', actions: [] },
+      { resource: 'access-assignments', actions: VIEW_ONLY },
+      { resource: 'schedules', actions: ALL_ACTIONS },
+      { resource: 'analytics', actions: VIEW_ONLY },
+      { resource: 'occupancy', actions: VIEW_ONLY },
+      { resource: 'bookings', actions: VIEW_ONLY },
+      { resource: 'users', actions: [] },
+      { resource: 'roles', actions: [] },
+    ],
+  },
+  {
+    id: 'r4',
+    name: 'Viewer',
+    description: 'Read-only dashboards and approved operational information.',
+    permissions: [
+      { resource: 'buildings', actions: VIEW_ONLY },
+      { resource: 'devices', actions: VIEW_ONLY },
+      { resource: 'automations', actions: VIEW_ONLY },
+      { resource: 'maintenance', actions: VIEW_ONLY },
+      { resource: 'vendors', actions: VIEW_ONLY },
+      { resource: 'access-assignments', actions: VIEW_ONLY },
+      { resource: 'schedules', actions: VIEW_ONLY },
+      { resource: 'analytics', actions: VIEW_ONLY },
+      { resource: 'occupancy', actions: VIEW_ONLY },
+      { resource: 'bookings', actions: VIEW_ONLY },
+      { resource: 'users', actions: [] },
+      { resource: 'roles', actions: [] },
+    ],
+  },
+];

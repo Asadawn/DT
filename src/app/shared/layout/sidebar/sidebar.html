@@ -1,0 +1,46 @@
+<hlm-sidebar collapsible="icon">
+  <div hlmSidebarHeader>
+    <div class="flex h-10 items-center gap-2 px-2">
+      <span class="text-sidebar-primary shrink-0 text-lg font-medium">◈</span>
+      <span
+        class="truncate font-medium group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:pointer-events-none"
+        >Digital Twin</span
+      >
+    </div>
+  </div>
+
+  <div hlmSidebarContent>
+    @for (group of navGroups; track group.label) {
+      <div hlmSidebarGroup>
+        <div hlmSidebarGroupLabel>{{ group.label }}</div>
+        <ul hlmSidebarMenu>
+          @for (item of group.items; track item.path) {
+            @if (isVisible(item)) {
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="item.path"
+                  routerLinkActive
+                  #rla="routerLinkActive"
+                  [isActive]="isActive(item, rla.isActive)"
+                  [tooltip]="item.label"
+                >
+                  <ng-icon [name]="item.icon" />
+                  <span>{{ item.label }}</span>
+                </a>
+              </li>
+            }
+          }
+        </ul>
+      </div>
+    }
+  </div>
+
+  <button
+    hlmSidebarTrigger
+    iconStyle="chevron"
+    size="icon-xs"
+    srOnlyText="Toggle navigation"
+    class="!absolute top-1/2 -right-3 z-20 -translate-y-1/2 active:!-translate-y-1/2 cursor-pointer rounded-full border border-border bg-background text-foreground shadow-sm"
+  ></button>
+</hlm-sidebar>

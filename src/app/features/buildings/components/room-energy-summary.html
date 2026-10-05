@@ -1,0 +1,142 @@
+<div hlmCard [size]="compact() ? 'sm' : 'default'" class="h-full">
+  <div hlmCardContent>
+    <div class="mb-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="bg-dashboard-accent/10 text-dashboard-accent flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+          <ng-icon name="lucideZap" size="14" />
+        </span>
+        <h2 class="text-sm font-semibold">{{ heading() }}</h2>
+      </div>
+      @if (isLive()) {
+        <div class="flex items-center gap-1.5 text-xs">
+          <span class="text-dashboard-accent flex items-center gap-1">
+            <span class="relative flex h-1.5 w-1.5">
+              <span class="bg-dashboard-accent absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+              <span class="bg-dashboard-accent relative inline-flex h-1.5 w-1.5 rounded-full"></span>
+            </span>
+            Live
+          </span>
+          @if (lastSeenAt(); as seenAt) {
+            <span class="text-muted-foreground">{{ seenAt | date: 'MMM d, y • h:mm a' }}</span>
+          }
+        </div>
+      }
+    </div>
+
+    @switch (state()) {
+      @case ('metered') {
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+            <span class="text-2xl">{{ total() }}</span>
+            <span class="text-muted-foreground text-sm">kWh</span>
+            @if (deltaPercent() !== null) {
+              <span
+                class="ml-1 flex items-center gap-0.5 text-xs"
+                [class]="deltaPercent()! <= 0 ? 'text-dashboard-accent' : 'text-dashboard-danger-strong'"
+              >
+                <ng-icon [name]="deltaPercent()! < 0 ? 'lucideArrowDown' : 'lucideArrowUp'" size="11" />
+                {{ deltaPercent()! < 0 ? -deltaPercent()! : deltaPercent() }}%
+                <span class="text-muted-foreground">vs. yesterday</span>
+              </span>
+            }
+          </div>
+          <a routerLink="/analytics/energy" class="text-merik shrink-0 text-xs hover:underline">View Details →</a>
+        </div>
+        <p class="text-muted-foreground mt-1 text-xs">From {{ roomMeter()?.name }} — dedicated {{ scopeLabel() }} meter</p>
+
+        @if (breakdown().length > 0) {
+          @if (compact()) {
+            <div class="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
+              @for (row of breakdown(); track row.name) {
+                <div class="flex items-center gap-2 text-xs">
+                  <span
+                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                    [class]="row.on ? 'bg-dashboard-accent/10 text-dashboard-accent' : 'bg-muted text-muted-foreground/60'"
+                  >
+                    <ng-icon [name]="deviceIcon(row.category)" size="12" />
+                  </span>
+                  <span class="min-w-0 flex-1 truncate font-medium">{{ row.name }}</span>
+                  <div class="bg-muted h-1.5 w-12 shrink-0 overflow-hidden rounded-full">
+                    <span class="bg-merik block h-full rounded-full" [style.width.%]="row.percent"></span>
+                  </div>
+                  <span class="text-muted-foreground w-14 shrink-0 text-right">{{ row.value }} kWh</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="mt-4 flex flex-col gap-2">
+              @for (row of breakdown(); track row.name) {
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="h-1.5 w-1.5 shrink-0 rounded-full" [class]="row.on ? 'bg-dashboard-accent' : 'bg-muted-foreground/40'"></span>
+                  <span class="text-muted-foreground w-20 shrink-0 truncate">{{ row.name }}</span>
+                  <div class="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
+                    <span class="bg-merik block h-full rounded-full" [style.width.%]="row.percent"></span>
+                  </div>
+                  <span class="text-muted-foreground w-16 shrink-0 text-right">{{ row.value }} kWh</span>
+                </div>
+              }
+            </div>
+          }
+        }
+      }
+      @case ('partial') {
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+            <span class="text-2xl">{{ total() }}</span>
+            <span class="text-muted-foreground text-sm">kWh</span>
+            @if (deltaPercent() !== null) {
+              <span
+                class="ml-1 flex items-center gap-0.5 text-xs"
+                [class]="deltaPercent()! <= 0 ? 'text-dashboard-accent' : 'text-dashboard-danger-strong'"
+              >
+                <ng-icon [name]="deltaPercent()! < 0 ? 'lucideArrowDown' : 'lucideArrowUp'" size="11" />
+                {{ deltaPercent()! < 0 ? -deltaPercent()! : deltaPercent() }}%
+                <span class="text-muted-foreground">vs. yesterday</span>
+              </span>
+            }
+          </div>
+          <a routerLink="/analytics/energy" class="text-merik shrink-0 text-xs hover:underline">View Details →</a>
+        </div>
+        <p class="text-muted-foreground mt-1 mb-3 text-xs">
+          Partial — based on {{ meteredDevices().length }} of {{ devices().length }} devices ({{ deviceNames() }})
+        </p>
+        @if (compact()) {
+          <div class="flex flex-col gap-1.5 border-t border-border pt-3">
+            @for (row of breakdown(); track row.name) {
+              <div class="flex items-center gap-2 text-xs">
+                <span
+                  class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                  [class]="row.on ? 'bg-dashboard-accent/10 text-dashboard-accent' : 'bg-muted text-muted-foreground/60'"
+                >
+                  <ng-icon [name]="deviceIcon(row.category)" size="12" />
+                </span>
+                <span class="min-w-0 flex-1 truncate font-medium">{{ row.name }}</span>
+                <div class="bg-muted h-1.5 w-12 shrink-0 overflow-hidden rounded-full">
+                  <span class="bg-merik block h-full rounded-full" [style.width.%]="row.percent"></span>
+                </div>
+                <span class="text-muted-foreground w-14 shrink-0 text-right">{{ row.value }} kWh</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="flex flex-col gap-2">
+            @for (row of breakdown(); track row.name) {
+              <div class="flex items-center gap-2 text-xs">
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full" [class]="row.on ? 'bg-dashboard-accent' : 'bg-muted-foreground/40'"></span>
+                <span class="text-muted-foreground w-20 shrink-0 truncate">{{ row.name }}</span>
+                <div class="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
+                  <span class="bg-merik block h-full rounded-full" [style.width.%]="row.percent"></span>
+                </div>
+                <span class="text-muted-foreground w-16 shrink-0 text-right">{{ row.value }} kWh</span>
+              </div>
+            }
+          </div>
+        }
+      }
+      @default {
+        <p class="text-muted-foreground text-sm">Not available</p>
+        <p class="text-muted-foreground mt-1 text-xs">No metered devices {{ emptyStatePhrase() }} yet.</p>
+      }
+    }
+  </div>
+</div>

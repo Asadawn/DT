@@ -1,0 +1,60 @@
+@if (assignment(); as assignment) {
+  <dt-page-header
+    [title]="assignment.principalName"
+    [breadcrumb]="[{ label: 'Temporary Access', link: '/operations/access-assignments' }]"
+    [description]="assignment.roleLabel"
+  >
+    <div actions class="flex items-center gap-2">
+      <dt-status-chip [status]="status()!" />
+      @if (status() === 'active' || status() === 'scheduled') {
+        <button *hasPermission="'access-assignments'; action: 'edit'" hlmBtn variant="destructive" [disabled]="revoking()" (click)="revoke()">
+          @if (revoking()) {
+            <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+          }
+          Revoke
+        </button>
+      }
+    </div>
+  </dt-page-header>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+    <div class="flex flex-col gap-4">
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">Validity Window</h2>
+        <p class="text-sm">{{ assignment.validFrom | date: 'medium' }} – {{ assignment.validUntil | date: 'medium' }}</p>
+        @if (assignment.revokedAt) {
+          <p class="mt-1 text-xs text-red-600">Revoked {{ assignment.revokedAt | date: 'medium' }}</p>
+        }
+      </section>
+
+      @if (maintenanceTitle() || vendorName()) {
+        <section class="rounded-card border-border border bg-white p-4">
+          <h2 class="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">Related</h2>
+          @if (maintenanceTitle(); as title) {
+            <p class="text-sm">
+              Maintenance: <a [routerLink]="['/operations/maintenance', assignment.maintenanceId]" class="hover:underline">{{ title }}</a>
+            </p>
+          }
+          @if (vendorName(); as name) {
+            <p class="text-sm">
+              Vendor: <a [routerLink]="['/operations/vendors', assignment.vendorId]" class="hover:underline">{{ name }}</a>
+            </p>
+          }
+        </section>
+      }
+    </div>
+
+    <aside class="rounded-card border-border h-fit border bg-white p-4">
+      <h2 class="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">Scope</h2>
+      <p class="text-sm">{{ building()?.name }}</p>
+      @if (floor()) {
+        <p class="text-muted-foreground text-xs">{{ floor()?.name }}</p>
+      }
+      @if (space()) {
+        <p class="text-muted-foreground text-xs">{{ space()?.name }}</p>
+      }
+    </aside>
+  </div>
+} @else {
+  <dt-empty-state icon="🔑" title="Assignment not found" />
+}

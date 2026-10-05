@@ -1,0 +1,106 @@
+@if (automation(); as automation) {
+  <dt-page-header
+    [title]="automation.name"
+    [breadcrumb]="[{ label: 'Automations', link: '/operations/automations' }]"
+    [description]="automation.description"
+  >
+    <div actions class="flex items-center gap-2">
+      <dt-status-chip [status]="automation.status" />
+      <a *hasPermission="'automations'; action: 'edit'" hlmBtn variant="secondary" [routerLink]="['/operations/automations', automation.id, 'edit']">Edit</a>
+      <button *hasPermission="'automations'; action: 'edit'" hlmBtn variant="secondary" [disabled]="updatingStatus()" (click)="toggleStatus()">
+        {{ automation.status === 'enabled' ? 'Disable' : 'Enable' }}
+      </button>
+      <button *hasPermission="'automations'; action: 'edit'" hlmBtn [disabled]="running()" (click)="runNow()">
+        @if (running()) {
+          <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+        }
+        Run Now
+      </button>
+    </div>
+  </dt-page-header>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+    <div class="flex flex-col gap-4">
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">When</h2>
+        <p class="text-sm">{{ triggerSummary() }}</p>
+      </section>
+
+      @if (conditionSummaries().length > 0) {
+        <section class="rounded-card border-border border bg-white p-4">
+          <h2 class="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">If</h2>
+          <ul class="flex flex-col gap-1">
+            @for (condition of conditionSummaries(); track condition) {
+              <li class="text-sm">{{ condition }}</li>
+            }
+          </ul>
+        </section>
+      }
+
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">Then</h2>
+        <ul class="flex flex-col gap-1">
+          @for (action of actionSummaries(); track action) {
+            <li class="text-sm">{{ action }}</li>
+          }
+        </ul>
+      </section>
+
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="mb-3 text-sm font-medium">Execution History</h2>
+        @if (executions().length === 0) {
+          <dt-empty-state icon="⚡" title="No executions yet" description="Run this automation to see it here." />
+        } @else {
+          <ul class="flex flex-col gap-3">
+            @for (execution of executions(); track execution.id) {
+              <li class="border-border rounded-control border p-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-sm font-medium">{{ execution.triggerSource }}</span>
+                  <div class="flex items-center gap-2">
+                    <dt-status-chip [status]="execution.finalState" />
+                    <span class="text-muted-foreground text-xs">{{ execution.triggeredAt | date: 'medium' }}</span>
+                  </div>
+                </div>
+                <ul class="mt-2 flex flex-col gap-0.5">
+                  @for (result of execution.actionResults; track result.action) {
+                    <li class="text-muted-foreground flex items-start gap-1.5 text-xs">
+                      <span [class]="result.success ? 'text-green-600' : 'text-red-600'">{{ result.success ? '✓' : '✕' }}</span>
+                      <span>{{ result.action }}@if (result.detail) { — {{ result.detail }} }</span>
+                    </li>
+                  }
+                </ul>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+
+    <aside class="flex flex-col gap-4">
+      <section class="rounded-card border-border h-fit border bg-white p-4">
+        <h2 class="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">For</h2>
+        <p class="text-sm">{{ building()?.name }}</p>
+        @if (floor()) {
+          <p class="text-muted-foreground text-xs">{{ floor()?.name }}</p>
+        }
+        @if (space()) {
+          <p class="text-muted-foreground text-xs">{{ space()?.name }}</p>
+        }
+      </section>
+
+      <section class="rounded-card border-border h-fit border bg-white p-4">
+        <h2 class="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">When Active</h2>
+        @if (automation.schedule) {
+          <p class="text-sm">
+            {{ automation.schedule.days.length === 7 || automation.schedule.days.length === 0 ? 'Every day' : automation.schedule.days.map(d => dayLabels[d]).join(', ') }}
+          </p>
+          <p class="text-muted-foreground text-xs">{{ automation.schedule.startHour }}:00 – {{ automation.schedule.endHour }}:00</p>
+        } @else {
+          <p class="text-sm">Any time</p>
+        }
+      </section>
+    </aside>
+  </div>
+} @else {
+  <dt-empty-state icon="⚡" title="Automation not found" />
+}

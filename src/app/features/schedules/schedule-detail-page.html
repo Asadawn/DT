@@ -1,0 +1,139 @@
+<div class="mx-auto mt-6 max-w-5xl">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-6">
+      <a routerLink="/operations/schedules" class="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1 text-sm">
+        <ng-icon name="lucideChevronLeft" size="16" />
+        Back to Schedules
+      </a>
+
+      <h1 class="text-foreground text-center text-2xl font-semibold">{{ scheduleId() ? 'Edit Schedule' : 'New Schedule' }}</h1>
+
+      <form class="flex flex-col gap-6" novalidate (submit)="$event.preventDefault(); onSubmit()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="scheduleForm.name"
+              [forceInvalid]="submitAttempted() && !scheduleForm.name().valid()"
+              placeholder="Enter name"
+            />
+            @if ((scheduleForm.name().touched() || submitAttempted()) && !scheduleForm.name().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ scheduleForm.name().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Building <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().buildingId" [itemToString]="buildingLabel" (valueChange)="model.update(m => ({...m, buildingId: $event ?? '', deviceIds: []}))">
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(scheduleForm.buildingId().touched() || submitAttempted()) && !scheduleForm.buildingId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select building" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of buildingOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((scheduleForm.buildingId().touched() || submitAttempted()) && !scheduleForm.buildingId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ scheduleForm.buildingId().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">End Date (optional)</span>
+            <hlm-date-picker [date]="isoToDate(model().endDate)" (dateChange)="setEndDate($event)">
+              <hlm-date-picker-input placeholder="Select end date" />
+            </hlm-date-picker>
+          </label>
+        </div>
+
+        <div class="border-border border-t pt-5">
+          <h2 class="mb-2 text-sm font-medium">Devices</h2>
+          @if (devicesInBuilding().length === 0) {
+            <p class="text-muted-foreground text-sm">Select a building to choose devices.</p>
+          } @else {
+            <div class="flex flex-wrap gap-3">
+              @for (device of devicesInBuilding(); track device.id) {
+                <label class="flex items-center gap-2 text-sm">
+                  <hlm-checkbox
+                    class="[&_button]:cursor-pointer!"
+                    [checked]="model().deviceIds.includes(device.id)"
+                    (checkedChange)="toggleDevice(device.id, $event)"
+                  />
+                  {{ device.name }}
+                </label>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="border-border border-t pt-5">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-sm font-medium">Weekly Schedule</h2>
+              <p class="text-muted-foreground text-xs">Tap a cell to toggle that hour on or off.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="text-muted-foreground flex items-center gap-3 text-xs">
+                <span class="flex items-center gap-1.5"><span class="bg-primary h-2.5 w-2.5 rounded-sm"></span>On</span>
+                <span class="flex items-center gap-1.5"><span class="bg-muted border-border h-2.5 w-2.5 rounded-sm border"></span>Off</span>
+              </div>
+              <div class="flex gap-2">
+                <button hlmBtn variant="secondary" size="sm" type="button" (click)="applyBusinessHours()">Business Hours</button>
+                <button hlmBtn variant="ghost" size="sm" type="button" (click)="clearGrid()">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[760px] table-fixed border-collapse text-xs">
+              <thead>
+                <tr class="border-border border-b">
+                  <th class="w-12"></th>
+                  @for (hour of hours; track hour) {
+                    <th
+                      class="text-muted-foreground py-1.5 text-center font-normal"
+                      [class]="hour % 6 === 0 && hour !== 0 ? 'border-border border-l' : ''"
+                    >
+                      {{ hour }}
+                    </th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (day of dayLabels; track day; let dayIndex = $index) {
+                  <tr [class]="dayIndex === 0 || dayIndex === 6 ? 'bg-muted/20' : ''">
+                    <td class="pr-1.5 text-right font-medium whitespace-nowrap">{{ day }}</td>
+                    @for (hour of hours; track hour) {
+                      <td class="p-0.5" [class]="hour % 6 === 0 && hour !== 0 ? 'border-border border-l' : ''">
+                        <button
+                          type="button"
+                          class="h-6 w-full cursor-pointer rounded-sm transition-colors"
+                          [class]="model().weeklyGrid[dayIndex][hour] ? 'bg-primary hover:bg-primary/80' : 'bg-muted hover:bg-muted-foreground/25'"
+                          [attr.aria-pressed]="model().weeklyGrid[dayIndex][hour]"
+                          [attr.title]="day + ' ' + hour + ':00'"
+                          (click)="toggleCell(dayIndex, hour)"
+                        ></button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button hlmBtn type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Save Schedule
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

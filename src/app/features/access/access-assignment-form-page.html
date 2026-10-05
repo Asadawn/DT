@@ -1,0 +1,130 @@
+<div class="mx-auto mt-6 max-w-3xl">
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-6">
+      <a routerLink="/operations/access-assignments" class="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1 text-sm">
+        <ng-icon name="lucideChevronLeft" size="16" />
+        Back to Temporary Access
+      </a>
+
+      <h1 class="text-foreground text-center text-2xl font-semibold">New Temporary Assignment</h1>
+
+      <form class="flex flex-col gap-5" novalidate (submit)="$event.preventDefault(); onSubmit()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Principal name <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              [formField]="assignmentForm.principalName"
+              [forceInvalid]="submitAttempted() && !assignmentForm.principalName().valid()"
+              placeholder="Enter name"
+            />
+            @if ((assignmentForm.principalName().touched() || submitAttempted()) && !assignmentForm.principalName().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ assignmentForm.principalName().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Principal type</span>
+            <hlm-select [value]="model().principalType" [itemToString]="principalTypeLabel" (valueChange)="model.update(m => ({...m, principalType: $any($event)}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of principalTypeOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+        </div>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Purpose <span class="text-dashboard-danger-strong">*</span></span>
+          <input
+            hlmInput
+            [formField]="assignmentForm.roleLabel"
+            [forceInvalid]="submitAttempted() && !assignmentForm.roleLabel().valid()"
+            placeholder="Enter purpose"
+          />
+          @if ((assignmentForm.roleLabel().touched() || submitAttempted()) && !assignmentForm.roleLabel().valid()) {
+            <span class="text-dashboard-danger-strong text-xs">{{ assignmentForm.roleLabel().errors()[0]?.message }}</span>
+          }
+        </label>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Building <span class="text-dashboard-danger-strong">*</span></span>
+            <hlm-select [value]="model().buildingId" [itemToString]="buildingLabel" (valueChange)="model.update(m => ({...m, buildingId: $event ?? '', floorId: '', spaceId: ''}))">
+              <hlm-select-trigger
+                class="w-full"
+                [class]="(assignmentForm.buildingId().touched() || submitAttempted()) && !assignmentForm.buildingId().valid() ? 'border-destructive!' : ''"
+              >
+                <hlm-select-value placeholder="Select building" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of buildingOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+            @if ((assignmentForm.buildingId().touched() || submitAttempted()) && !assignmentForm.buildingId().valid()) {
+              <span class="text-dashboard-danger-strong text-xs">{{ assignmentForm.buildingId().errors()[0]?.message }}</span>
+            }
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Floor (optional)</span>
+            <hlm-select [value]="model().floorId" [itemToString]="floorLabel" (valueChange)="model.update(m => ({...m, floorId: $event ?? '', spaceId: ''}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Any floor" /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of floorOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Space (optional)</span>
+            <hlm-select [value]="model().spaceId" [itemToString]="spaceLabel" (valueChange)="model.update(m => ({...m, spaceId: $event ?? ''}))">
+              <hlm-select-trigger class="w-full"><hlm-select-value placeholder="Any space" /></hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (option of spaceOptions(); track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Valid from <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              type="datetime-local"
+              [formField]="assignmentForm.validFrom"
+              [forceInvalid]="submitAttempted() && !assignmentForm.validFrom().valid()"
+            />
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm font-medium">Valid until <span class="text-dashboard-danger-strong">*</span></span>
+            <input
+              hlmInput
+              type="datetime-local"
+              [formField]="assignmentForm.validUntil"
+              [forceInvalid]="submitAttempted() && !assignmentForm.validUntil().valid()"
+            />
+          </label>
+        </div>
+        @if (validityError()) {
+          <p class="text-dashboard-danger-strong text-xs">{{ validityError() }}</p>
+        }
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button hlmBtn type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            }
+            Create Assignment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

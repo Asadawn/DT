@@ -1,0 +1,320 @@
+<app-building-context-header [buildingId]="buildingId()" />
+
+@if (isCompact()) {
+  <div class="flex shrink-0 items-center gap-2 border-b border-border bg-white px-4 py-2">
+    <button
+      type="button"
+      class="rounded-control border-border hover:bg-accent flex cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-xs"
+      (click)="openDrawer.set('status')"
+    >
+      <ng-icon name="lucideActivity" size="14" />
+      Status
+    </button>
+    <button
+      type="button"
+      class="rounded-control border-border hover:bg-accent flex cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-xs"
+      (click)="openDrawer.set('details')"
+    >
+      <ng-icon name="lucidePanelRight" size="14" />
+      Details
+    </button>
+  </div>
+}
+
+<div class="flex min-h-0 flex-1">
+  @if (!isCompact()) {
+    <aside
+      class="ws-scroll-panel flex w-[320px] shrink-0 flex-col overflow-y-auto bg-transparent"
+    >
+      <ng-container [ngTemplateOutlet]="leftPanelContent" />
+    </aside>
+  }
+
+  <main class="bg-muted/30 flex min-h-0 flex-1 flex-col">
+    <div class="relative min-h-0 w-full flex-1">
+      @if (!modelLoaded()) {
+        <div class="bg-muted absolute inset-0 animate-pulse"></div>
+      }
+
+      <div class="absolute top-3 left-3 z-10 flex flex-col items-start gap-2">
+        <app-workspace-breadcrumb [buildingId]="buildingId()" />
+      </div>
+
+      @if (modelView() !== 'room') {
+        <button
+          type="button"
+          class="rounded-control border-border hover:bg-accent absolute top-3 right-3 z-10 flex cursor-pointer items-center justify-center border bg-white p-2 shadow-md"
+          [attr.aria-label]="modelView() === 'floor' ? 'Show Roof' : 'Show Floor Plan'"
+          [attr.title]="modelView() === 'floor' ? 'Show Roof' : 'Show Floor Plan'"
+          (click)="setModelView(modelView() === 'floor' ? 'ground' : 'floor')"
+        >
+          <ng-icon [name]="modelView() === 'floor' ? 'lucideEye' : 'lucideEyeOff'" size="16" />
+        </button>
+      }
+
+      @if (modelView() === 'room') {
+        <dt-model-viewer
+          [src]="roomModelUrl"
+          [cameraOrbit]="roomCameraOrbit"
+          [cameraTarget]="roomCameraTarget"
+          [minCameraOrbit]="roomMinCameraOrbit"
+          [maxCameraOrbit]="roomMaxCameraOrbit"
+          alt="Room 3D model"
+          (loaded)="modelLoaded.set(true)"
+        >
+          @for (marker of roomDeviceMarkers(); track marker.category) {
+            <div
+              [attr.slot]="'hotspot-device-' + marker.category"
+              [attr.data-position]="marker.markerPosition"
+              data-normal="0m 1m 0m"
+              style="position: relative; width: 0; height: 0; pointer-events: none"
+            >
+              <div
+                style="
+                  position: absolute;
+                  left: -4px;
+                  top: -4px;
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 9999px;
+                  background: #24b262;
+                  box-shadow: 0 0 0 4px rgba(36, 178, 98, 0.18);
+                "
+              ></div>
+              <div
+                style="
+                  position: absolute;
+                  left: -0.5px;
+                  top: -38px;
+                  width: 1px;
+                  height: 34px;
+                  background: linear-gradient(
+                    to bottom,
+                    rgba(36, 178, 98, 0.1),
+                    rgba(36, 178, 98, 0.75)
+                  );
+                "
+              ></div>
+              <div
+                style="
+                  position: absolute;
+                  left: 0;
+                  top: -42px;
+                  transform: translate(-50%, -100%);
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  background: rgba(255, 255, 255, 0.97);
+                  backdrop-filter: blur(6px);
+                  -webkit-backdrop-filter: blur(6px);
+                  padding: 5px 12px 5px 5px;
+                  border-radius: 9999px;
+                  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+                  white-space: nowrap;
+                "
+              >
+                <span
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 26px;
+                    height: 26px;
+                    border-radius: 9999px;
+                    background: rgba(36, 178, 98, 0.12);
+                    color: #24b262;
+                    flex-shrink: 0;
+                  "
+                >
+                  <ng-icon [name]="marker.icon" size="13" />
+                </span>
+                <span style="display: flex; flex-direction: column; line-height: 1.2">
+                  <span style="font-size: 11px; font-weight: 600; color: #102826">{{
+                    marker.device.name
+                  }}</span>
+                  <span style="font-size: 10px; color: #6b7280">{{ marker.subtitle }}</span>
+                </span>
+              </div>
+            </div>
+          }
+        </dt-model-viewer>
+      } @else if (modelView() === 'ground') {
+        <dt-model-viewer
+          [src]="groundModelUrl"
+          [cameraOrbit]="groundCameraOrbit"
+          [cameraTarget]="groundCameraTarget"
+          [minCameraOrbit]="groundFloorMinCameraOrbit"
+          [maxCameraOrbit]="groundFloorMaxCameraOrbit"
+          [hoverMaterialPattern]="roofMaterialPattern"
+          [hoverMinNormalY]="roofMinNormalY"
+          [hoverMinWorldY]="roofMinWorldY"
+          alt="Building 3D model"
+          (loaded)="modelLoaded.set(true)"
+          (modelClicked)="onGroundModelClicked($event)"
+        />
+      } @else {
+        <dt-model-viewer
+          [src]="floorModelUrl"
+          [cameraOrbit]="floorCameraOrbit()"
+          [cameraTarget]="groundCameraTarget"
+          [minCameraOrbit]="groundFloorMinCameraOrbit"
+          [maxCameraOrbit]="groundFloorMaxCameraOrbit"
+          [hoverRegionTest]="endRoomHoverTest"
+          alt="Building floor plan 3D model"
+          (loaded)="modelLoaded.set(true)"
+          (modelClicked)="onFloorModelClicked($event)"
+        >
+          @if (showFloorPlanRoomMarkers()) {
+            @for (room of floorPlanRoomMarkers; track room.spaceId) {
+              <div
+                [attr.slot]="'hotspot-room-' + room.spaceId"
+                [attr.data-position]="room.markerPosition"
+                data-normal="0m 1m 0m"
+                style="position: relative; width: 0; height: 0; pointer-events: none"
+              >
+                <div
+                  style="
+                    position: absolute;
+                    left: -4px;
+                    top: -4px;
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 9999px;
+                    background: #24b262;
+                    box-shadow: 0 0 0 4px rgba(36, 178, 98, 0.18);
+                  "
+                ></div>
+                <div
+                  style="
+                    position: absolute;
+                    left: -0.5px;
+                    top: -30px;
+                    width: 1px;
+                    height: 26px;
+                    background: linear-gradient(
+                      to bottom,
+                      rgba(36, 178, 98, 0.1),
+                      rgba(36, 178, 98, 0.75)
+                    );
+                  "
+                ></div>
+                <div
+                  style="
+                    position: absolute;
+                    left: 0;
+                    top: -34px;
+                    transform: translate(-50%, -100%);
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: rgba(255, 255, 255, 0.97);
+                    backdrop-filter: blur(6px);
+                    -webkit-backdrop-filter: blur(6px);
+                    padding: 5px 10px;
+                    border-radius: 9999px;
+                    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+                    white-space: nowrap;
+                  "
+                >
+                  <span
+                    style="
+                      width: 6px;
+                      height: 6px;
+                      border-radius: 9999px;
+                      background: #24b262;
+                      flex-shrink: 0;
+                    "
+                  ></span>
+                  <span style="font-size: 11px; font-weight: 600; color: #102826">{{
+                    room.name
+                  }}</span>
+                </div>
+              </div>
+            }
+          }
+        </dt-model-viewer>
+
+        @if (showFloorPlanRoomMarkers() && floorPlanRoomMarkers.length > 0) {
+          <div
+            class="text-muted-foreground pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-md bg-white/90 px-2.5 py-1.5 text-[11px] shadow-sm backdrop-blur-sm"
+          >
+            <span class="bg-dashboard-accent h-1.5 w-1.5 shrink-0 rounded-full"></span>
+            Click Manager Room to explore in 3D
+          </div>
+        }
+      }
+
+      @if (modelView() === 'room') {
+        <div class="absolute right-3 bottom-3 left-3 z-10">
+          <app-workspace-current-readings [devices]="roomDevices()" />
+        </div>
+      }
+    </div>
+  </main>
+
+  @if (!isCompact()) {
+    <aside
+      class="ws-scroll-panel w-[320px] shrink-0 overflow-y-auto  bg-transparent"
+    >
+      <ng-container [ngTemplateOutlet]="rightPanelContent" />
+    </aside>
+  }
+</div>
+
+<ng-template #leftPanelContent>
+  <app-workspace-status-panel [buildingId]="buildingId()" />
+</ng-template>
+
+<ng-template #rightPanelContent>
+  <app-contextual-details-panel />
+</ng-template>
+
+@if (isCompact()) {
+  <hlm-drawer
+    [state]="openDrawer() === 'status' ? 'open' : 'closed'"
+    (closed)="onDrawerClosed('status')"
+  >
+    <ng-template hlmDrawerPortal>
+      <hlm-drawer-content>
+        <hlm-drawer-header class="flex-row items-center justify-between">
+          <h2 hlmDrawerTitle>Status</h2>
+          <button
+            hlmDrawerClose
+            type="button"
+            class="text-muted-foreground hover:text-foreground cursor-pointer"
+            aria-label="Close"
+          >
+            <ng-icon name="lucideX" size="16" />
+          </button>
+        </hlm-drawer-header>
+        <div class="ws-scroll-panel min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+          <ng-container [ngTemplateOutlet]="leftPanelContent" />
+        </div>
+      </hlm-drawer-content>
+    </ng-template>
+  </hlm-drawer>
+
+  <hlm-drawer
+    [state]="openDrawer() === 'details' ? 'open' : 'closed'"
+    (closed)="onDrawerClosed('details')"
+  >
+    <ng-template hlmDrawerPortal>
+      <hlm-drawer-content>
+        <hlm-drawer-header class="flex-row items-center justify-between">
+          <h2 hlmDrawerTitle>Details</h2>
+          <button
+            hlmDrawerClose
+            type="button"
+            class="text-muted-foreground hover:text-foreground cursor-pointer"
+            aria-label="Close"
+          >
+            <ng-icon name="lucideX" size="16" />
+          </button>
+        </hlm-drawer-header>
+        <div class="ws-scroll-panel min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+          <ng-container [ngTemplateOutlet]="rightPanelContent" />
+        </div>
+      </hlm-drawer-content>
+    </ng-template>
+  </hlm-drawer>
+}

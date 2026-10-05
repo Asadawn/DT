@@ -1,0 +1,39 @@
+@if (!range()) {
+  <div class="mb-3 flex items-center justify-end">
+    <dt-chart-range-toggle [(rangeId)]="internalRangeId" />
+  </div>
+}
+
+<div class="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  <dt-chart-card title="Voltage" [loading]="isLoading()" [error]="hasError()" [noData]="noData(voltage())">
+    <dt-multi-series-chart [labels]="voltage().labels" [series]="voltage().series" unit="V" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Current" [loading]="isLoading()" [error]="hasError()" [noData]="noData(current())">
+    <dt-multi-series-chart [labels]="current().labels" [series]="current().series" unit="A" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Power Factor" [loading]="isLoading()" [error]="hasError()" [noData]="noData(powerFactor())">
+    <dt-multi-series-chart [labels]="powerFactor().labels" [series]="powerFactor().series" unit="" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Today's Energy by Meter" [noData]="energyLabels().length === 0">
+    <dt-bar-chart [labels]="energyLabels()" [values]="energyValues()" label="Energy" unit="kWh" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Frequency" [loading]="isLoading()" [error]="hasError()" [noData]="noData(frequency())">
+    <dt-multi-series-chart [labels]="frequency().labels" [series]="frequency().series" unit="Hz" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Active Power — all meters" [loading]="isLoading()" [error]="hasError()" [noData]="noData(activePower())">
+    <dt-multi-series-chart [labels]="activePower().labels" [series]="activePower().series" unit="kW" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Reactive Power" [noData]="energyLabels().length === 0">
+    <dt-bar-chart [labels]="energyLabels()" [values]="reactiveValues()" label="Reactive Power" unit="kVAR" color="#D97706" />
+  </dt-chart-card>
+
+  <dt-chart-card title="Apparent Power" [noData]="energyLabels().length === 0">
+    <dt-bar-chart [labels]="energyLabels()" [values]="apparentValues()" label="Apparent Power" unit="kVA" color="#2563EB" />
+  </dt-chart-card>
+</div>

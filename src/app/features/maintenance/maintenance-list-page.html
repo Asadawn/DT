@@ -1,0 +1,109 @@
+<dt-page-header title="Maintenances" description="Requests, priority and status">
+  <div actions>
+    <a hlmBtn [routerLink]="['/operations/maintenance/new']">New Request</a>
+  </div>
+</dt-page-header>
+
+<div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <dt-kpi-card label="Total Requests" [value]="kpiTotal()" ngIcon="lucideWrench" [delta]="2" deltaLabel="vs last 7 days" />
+  <dt-kpi-card label="Open" [value]="kpiOpen()" ngIcon="lucideClock" tone="muted" [delta]="kpiOpenPercent()" deltaLabel="of total requests" deltaGood="down" />
+  <dt-kpi-card
+    label="Urgent"
+    [value]="kpiUrgent()"
+    ngIcon="lucideAlertTriangle"
+    tone="warning"
+    [delta]="kpiUrgentPercent()"
+    deltaLabel="of total requests"
+    deltaGood="down"
+  />
+  <dt-kpi-card label="Closed" [value]="kpiClosed()" ngIcon="lucideCircleCheck" [delta]="kpiClosedPercent()" deltaLabel="of total requests" />
+</div>
+
+<div hlmCard size="sm" class="mb-3">
+  <div hlmCardContent>
+    <dt-filter-bar [activeFilterCount]="activeFilterCount()" class="block">
+      <dt-search-input primary placeholder="Search requests…" [value]="search()" (valueChange)="search.set($event)" />
+      <hlm-select inline [value]="status()" [itemToString]="statusLabel" (valueChange)="status.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All statuses" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of statusOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="priority()" [itemToString]="priorityLabel" (valueChange)="priority.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All priorities" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of priorityOptions; track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <hlm-select inline [value]="buildingId()" [itemToString]="buildingLabel" (valueChange)="buildingId.set($event ?? '')">
+        <hlm-select-trigger class="w-40"><hlm-select-value placeholder="All buildings" /></hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (option of buildingOptions(); track option.value) {
+            <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+      <button
+        inline
+        type="button"
+        class="text-muted-foreground hover:text-foreground ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!hasActiveFilters()"
+        (click)="resetFilters()"
+      >
+        <ng-icon name="lucideRotateCcw" size="14" />
+        Reset
+      </button>
+    </dt-filter-bar>
+  </div>
+</div>
+
+@if (selectedCount() > 0) {
+  <div class="rounded-card border-primary bg-primary/5 mb-3 flex flex-wrap items-center gap-3 border px-4 py-2.5">
+    <span class="text-sm font-medium">{{ selectedCount() }} selected</span>
+    <div class="ml-auto flex gap-2">
+      <button
+        hlmBtn
+        size="sm"
+        class="bg-primary/10 text-primary hover:bg-primary/20"
+        [disabled]="bulkPending()"
+        (click)="bulkSetStatus('closed')"
+      >
+        @if (bulkPending()) {
+          <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+        }
+        Mark Closed
+      </button>
+      <button hlmBtn variant="destructive" size="sm" [disabled]="bulkPending()" (click)="bulkSetStatus('rejected')">
+        @if (bulkPending()) {
+          <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+        }
+        Reject
+      </button>
+      <button hlmBtn variant="ghost" size="sm" class="hover:bg-primary/10! hover:text-foreground!" (click)="clearSelection()">Clear</button>
+    </div>
+  </div>
+}
+
+<dt-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [loading]="loading()"
+  [selectable]="true"
+  [(selected)]="selectedIds"
+  emptyTitle="No maintenance requests match these filters"
+  (rowClick)="openRequest($event)"
+>
+  <ng-template dtCell="priority" let-row>
+    <dt-status-chip [status]="row.priority" />
+  </ng-template>
+  <ng-template dtCell="status" let-row>
+    <dt-status-chip [status]="row.status" />
+  </ng-template>
+  <ng-template dtCell="updated" let-row>
+    {{ row.updatedAt | date: 'short' }}
+  </ng-template>
+</dt-data-table>

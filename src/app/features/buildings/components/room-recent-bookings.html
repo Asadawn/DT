@@ -1,0 +1,49 @@
+<div hlmCard class="h-full">
+  <div hlmCardContent class="flex h-full flex-col">
+    <div class="mb-2 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="bg-dashboard-accent/10 text-dashboard-accent flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+          <ng-icon name="lucideCalendar" size="14" />
+        </span>
+        <h3 class="text-sm font-semibold">Recent Bookings</h3>
+      </div>
+      <a routerLink="/operations/occupancy" class="text-merik text-xs font-medium hover:underline">View All →</a>
+    </div>
+
+    @if (recentBookings().length > 0) {
+      <ul class="divide-border flex flex-1 flex-col divide-y">
+        @for (booking of recentBookings(); track booking.id) {
+          <li class="flex flex-1 items-stretch">
+            <a
+              [routerLink]="['/operations/occupancy/bookings', booking.id]"
+              class="hover:bg-accent flex flex-1 items-center justify-between gap-3 rounded-control px-1 py-2"
+            >
+              <div class="flex min-w-0 items-center gap-3">
+                <hlm-avatar size="sm">
+                  <span hlmAvatarFallback class="bg-merik/10 text-merik">{{ initials(booking.guestName) }}</span>
+                </hlm-avatar>
+                <div class="min-w-0">
+                  <div class="truncate text-xs font-medium">{{ booking.guestName }}</div>
+                  <div class="text-muted-foreground truncate text-xs">
+                    @if (booking.status === 'checked-in') {
+                      {{ booking.checkInDate | date: 'mediumDate' }} – {{ booking.checkOutDate | date: 'mediumDate' }}
+                    } @else {
+                      {{ booking.checkInDate | date: 'mediumDate' }}
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="flex shrink-0 items-center gap-1.5">
+                <dt-status-chip [status]="booking.status" weight="normal" />
+                <ng-icon name="lucideChevronRight" size="14" class="text-muted-foreground" />
+              </div>
+            </a>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="text-muted-foreground text-sm">Not available</p>
+      <p class="text-muted-foreground mt-1 text-xs">No bookings for this room yet.</p>
+    }
+  </div>
+</div>

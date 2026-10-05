@@ -1,0 +1,88 @@
+<button
+  hlmCard
+  type="button"
+  (click)="select.emit(device())"
+  class="hover:ring-merik/40 h-full w-full text-left transition-shadow"
+  [class]="ringClass()"
+>
+  <div hlmCardContent class="flex h-full flex-col gap-3">
+    <div class="flex items-center gap-2">
+      <span class="text-lg">{{ icon() }}</span>
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-sm font-medium">{{ device().name }}</div>
+        @if (subtitle(); as sub) {
+          <div class="text-muted-foreground text-xs">{{ sub }}</div>
+        }
+      </div>
+      <dt-status-chip [status]="device().connectivity" />
+    </div>
+
+    @if (readOnlyProperties().length > 0) {
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(6.5rem,1fr))] gap-2">
+        @for (property of readOnlyProperties(); track property.id) {
+          <dt-metric-card [label]="property.label" [value]="displayValue(property.value)" [unit]="property.unit" />
+        }
+      </div>
+    } @else if (device().capabilities.telemetry) {
+      <p class="text-muted-foreground text-xs">Waiting for first reading…</p>
+    }
+
+    @for (property of writableProperties(); track property.id) {
+      @if (property.valueType === 'boolean') {
+        <div class="border-border rounded-control flex items-center justify-between gap-3 border px-3 py-2">
+          <div>
+            <div class="text-sm font-medium">{{ property.label }}</div>
+            <div class="text-muted-foreground text-xs">{{ booleanLabel(property) }}</div>
+          </div>
+          <hlm-switch
+            *hasPermission="'devices'; action: 'edit'"
+            [checked]="!!property.value"
+            [disabled]="commandService.isPending(device().id, property.id)"
+            [attr.aria-label]="property.label"
+            (click)="$event.stopPropagation()"
+            (checkedChange)="toggle(property, $event)"
+          />
+        </div>
+      } @else if (property.valueType === 'number') {
+        <div class="border-border rounded-control flex items-center justify-between gap-3 border px-3 py-2">
+          <div>
+            <div class="text-sm font-medium">{{ property.label }}</div>
+            <div class="text-muted-foreground text-xs">{{ property.value }}{{ property.unit ? ' ' + property.unit : '' }}</div>
+          </div>
+          <div class="flex items-center gap-1" (click)="$event.stopPropagation()">
+            <button
+              *hasPermission="'devices'; action: 'edit'"
+              type="button"
+              class="border-border hover:bg-accent flex h-7 w-7 cursor-pointer items-center justify-center rounded border text-base font-bold leading-none disabled:cursor-not-allowed disabled:opacity-40"
+              [disabled]="commandService.isPending(device().id, property.id) || atMin(property)"
+              (click)="stepDown(property)"
+              [attr.aria-label]="'Decrease ' + property.label"
+            >−</button>
+            <span class="w-8 text-center text-sm font-semibold tabular-nums">{{ property.value }}</span>
+            <button
+              *hasPermission="'devices'; action: 'edit'"
+              type="button"
+              class="border-border hover:bg-accent flex h-7 w-7 cursor-pointer items-center justify-center rounded border text-base font-bold leading-none disabled:cursor-not-allowed disabled:opacity-40"
+              [disabled]="commandService.isPending(device().id, property.id) || atMax(property)"
+              (click)="stepUp(property)"
+              [attr.aria-label]="'Increase ' + property.label"
+            >+</button>
+          </div>
+        </div>
+      }
+    }
+
+    @if (schedules().length > 0) {
+      <div class="text-muted-foreground flex items-center gap-1.5 text-xs">
+        <span>◷</span>
+        <span class="truncate">{{ schedules()[0].name }}</span>
+        <dt-status-chip [status]="schedules()[0].status" />
+      </div>
+    }
+
+    <span class="text-merik mt-auto flex cursor-pointer items-center gap-1 pt-1 text-xs font-medium">
+      View reading
+      <ng-icon name="lucideArrowRight" size="13" />
+    </span>
+  </div>
+</button>

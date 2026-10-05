@@ -1,0 +1,75 @@
+@if (booking(); as booking) {
+  <dt-page-header
+    [title]="booking.guestName"
+    [breadcrumb]="[{ label: 'Occupancy', link: '/operations/occupancy' }]"
+    [description]="(building()?.name ?? '') + ' / ' + (space()?.name ?? '')"
+  >
+    <div actions>
+      <dt-status-chip [status]="booking.status" />
+      @if (needsNoShowDecision()) {
+        <dt-status-chip status="warning" label="Needs a decision" />
+      }
+    </div>
+  </dt-page-header>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+    <div class="flex flex-col gap-4">
+      <section class="rounded-card border-border border bg-white p-4">
+        <h2 class="mb-2 text-sm font-medium">Booking details</h2>
+        <dl class="flex flex-col gap-1.5 text-sm">
+          <div class="flex justify-between"><dt class="text-muted-foreground">Guests</dt><dd>{{ booking.numberOfGuests ?? '—' }}</dd></div>
+          <div class="flex justify-between"><dt class="text-muted-foreground">Check-in</dt><dd>{{ booking.checkInDate }}</dd></div>
+          <div class="flex justify-between"><dt class="text-muted-foreground">Check-out</dt><dd>{{ booking.checkOutDate }}</dd></div>
+          <div class="flex justify-between"><dt class="text-muted-foreground">Location</dt><dd>{{ building()?.name }} / {{ floor()?.name }} / {{ space()?.name }}</dd></div>
+          <div class="flex justify-between"><dt class="text-muted-foreground">Created by</dt><dd>{{ booking.createdBy }}</dd></div>
+        </dl>
+        @if (booking.notes) {
+          <p class="text-muted-foreground mt-3 text-xs">{{ booking.notes }}</p>
+        }
+      </section>
+
+      @if (cleaningTicket(); as ticket) {
+        <section class="rounded-card border-border border bg-white p-4">
+          <h2 class="mb-2 text-sm font-medium">Cleaning ticket</h2>
+          <a [routerLink]="['/operations/maintenance', ticket.id]" class="text-primary flex items-center justify-between gap-2 text-sm hover:underline">
+            <span>{{ ticket.title }}</span>
+            <dt-status-chip [status]="ticket.status" />
+          </a>
+        </section>
+      }
+    </div>
+
+    <aside class="rounded-card border-border h-fit border bg-white p-4">
+      <h2 class="mb-3 text-sm font-medium">Actions</h2>
+      @if (errorMessage()) {
+        <p class="mb-3 rounded-control bg-red-50 px-3 py-2 text-xs text-red-700">{{ errorMessage() }}</p>
+      }
+      <div *hasPermission="'bookings'; action: 'edit'" class="flex flex-col gap-2">
+        @if (booking.status === 'reserved') {
+          <a hlmBtn variant="outline" [routerLink]="['/operations/occupancy/bookings', booking.id, 'edit']">Edit Booking</a>
+        }
+        @if (nextActions().length === 0) {
+          <dt-empty-state icon="✓" title="No further actions" />
+        } @else {
+          <div class="flex flex-col gap-2">
+            @for (item of nextActions(); track item.label) {
+              <button
+                hlmBtn
+                [variant]="item.danger ? 'destructive' : 'secondary'"
+                [disabled]="updating()"
+                (click)="run(item)"
+              >
+                @if (updating()) {
+                  <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                }
+                {{ item.label }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </aside>
+  </div>
+} @else {
+  <dt-empty-state icon="✎" title="Booking not found" />
+}

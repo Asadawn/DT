@@ -1,0 +1,89 @@
+<div class="bg-canvas min-h-svh">
+  <header class="border-border bg-background flex h-14 items-center gap-3 border-b px-4">
+    <span class="text-sidebar-primary text-lg font-medium">◈</span>
+    <span class="font-medium">Vendor Portal</span>
+    @if (vendor(); as vendor) {
+      <span class="text-muted-foreground">· {{ vendor.name }}</span>
+    }
+    <div class="flex-1"></div>
+    <a [routerLink]="['/operations/vendors', vendorId()]" class="text-primary text-sm hover:underline">Exit portal</a>
+  </header>
+
+  <main class="mx-auto flex max-w-3xl flex-col gap-6 p-4 md:p-6">
+    @if (vendor(); as vendor) {
+      <section class="rounded-card border-border border bg-white p-4">
+        <h1 class="text-lg font-medium">{{ vendor.name }}</h1>
+        <p class="text-muted-foreground text-sm">{{ vendor.contactName }} · {{ vendor.contactEmail }} · {{ vendor.contactPhone }}</p>
+      </section>
+
+      <section>
+        <h2 class="mb-3 text-sm font-medium">Active Jobs</h2>
+        @if (activeJobs().length === 0) {
+          <dt-empty-state icon="🧰" title="No active jobs" description="You'll see a job here once you're selected for a maintenance request." />
+        } @else {
+          <ul class="flex flex-col gap-3">
+            @for (job of activeJobs(); track job.id) {
+              <li class="rounded-card border-border border bg-white p-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-sm font-medium">{{ maintenanceTitle(job.maintenanceId) }}</span>
+                  @if (job.jobStatus) {
+                    <dt-status-chip [status]="job.jobStatus" />
+                  }
+                </div>
+                <p class="text-muted-foreground mt-1 text-sm">{{ maintenanceLocation(job.maintenanceId) }}</p>
+                @if (job.technicianName) {
+                  <p class="text-muted-foreground mt-1 text-xs">Technician: {{ job.technicianName }}</p>
+                }
+
+                @if (job.evidence.length > 0) {
+                  <ul class="mt-2 flex flex-col gap-0.5">
+                    @for (entry of job.evidence; track entry.id) {
+                      <li class="text-muted-foreground text-xs">{{ entry.at | date: 'short' }} — {{ entry.note }}</li>
+                    }
+                  </ul>
+                }
+
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  @if (job.jobStatus && nextJobStatus[job.jobStatus]) {
+                    <button hlmBtn size="sm" type="button" [disabled]="updatingJobId() === job.id" (click)="advanceJob(job)">
+                      Mark {{ nextJobStatus[job.jobStatus] }}
+                    </button>
+                  }
+                  @if (job.jobStatus !== 'complete') {
+                    <input
+                      placeholder="Add a note (evidence)"
+                      [value]="evidenceValue(job.id)"
+                      (input)="setEvidenceValue(job.id, $any($event.target).value)"
+                      class="border-border bg-background rounded-control flex-1 border px-2 py-1.5 text-sm"
+                    />
+                    <button hlmBtn variant="secondary" size="sm" type="button" [disabled]="!evidenceValue(job.id).trim()" (click)="addEvidence(job.id)">
+                      Add
+                    </button>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section>
+        <h2 class="mb-3 text-sm font-medium">Past Invitations</h2>
+        @if (pastInvitations().length === 0) {
+          <dt-empty-state icon="🤝" title="No past invitations" />
+        } @else {
+          <ul class="flex flex-col gap-2">
+            @for (invitation of pastInvitations(); track invitation.id) {
+              <li class="rounded-card border-border flex flex-wrap items-center justify-between gap-2 border bg-white p-3">
+                <span class="text-sm">{{ maintenanceTitle(invitation.maintenanceId) }}</span>
+                <dt-status-chip [status]="invitation.status" />
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    } @else {
+      <dt-empty-state icon="🤝" title="Vendor not found" />
+    }
+  </main>
+</div>

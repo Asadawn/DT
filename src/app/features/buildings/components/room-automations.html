@@ -1,0 +1,36 @@
+<div hlmCard size="sm">
+  <div hlmCardContent>
+    <div class="mb-2 flex items-center justify-between">
+      <h2 class="text-sm font-medium">Automations</h2>
+      <a routerLink="/operations/automations" class="text-merik text-xs font-medium hover:underline">View all →</a>
+    </div>
+
+    @if (automations().length === 0) {
+      <p class="text-muted-foreground text-sm">No automations act on this room's devices.</p>
+    } @else {
+      <ul class="divide-border flex flex-col divide-y">
+        @for (automation of automations(); track automation.id) {
+          <li class="flex items-center justify-between gap-3 py-2">
+            <a [routerLink]="['/operations/automations', automation.id]" class="hover:underline min-w-0 flex-1">
+              <div class="truncate text-sm font-medium">{{ automation.name }}</div>
+              <div class="text-muted-foreground truncate text-xs">{{ describe(automation) }}</div>
+              @if (lastRunAt(automation); as at) {
+                <div class="text-muted-foreground text-xs">Last run {{ at | date: 'short' }}</div>
+              }
+            </a>
+            <div class="flex shrink-0 items-center gap-2">
+              <span class="text-muted-foreground text-xs">{{ automation.status === 'enabled' ? 'Active' : 'Paused' }}</span>
+              <hlm-switch
+                *hasPermission="'automations'; action: 'edit'"
+                [checked]="automation.status === 'enabled'"
+                [disabled]="togglingId() === automation.id"
+                [attr.aria-label]="automation.name + ' active'"
+                (checkedChange)="toggleStatus(automation)"
+              />
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

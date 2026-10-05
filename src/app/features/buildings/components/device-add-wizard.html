@@ -1,0 +1,128 @@
+<div class="flex flex-col gap-4">
+  <div>
+    <div class="flex items-center gap-1.5">
+      @for (s of [1, 2, 3, 4, 5]; track s) {
+        <span class="h-1.5 flex-1 rounded-full" [class]="s <= step() ? 'bg-primary' : 'bg-muted'"></span>
+      }
+    </div>
+    <p class="text-muted-foreground mt-1.5 text-xs">Step {{ step() }} of 5 — {{ stepTitles[step() - 1] }}</p>
+  </div>
+
+  @if (step() === 1) {
+    <div class="flex flex-col gap-3">
+      <label class="flex flex-col gap-1">
+        <span class="text-sm font-medium">Device Name <span class="text-dashboard-danger-strong">*</span></span>
+        <input hlmInput [formField]="identityForm.name" placeholder="e.g. Bedroom Motion Sensor" />
+        @if (identityForm.name().touched() && !identityForm.name().valid()) {
+          <span class="text-xs text-red-600">{{ identityForm.name().errors()[0]?.message }}</span>
+        }
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-sm font-medium">Serial / External ID (optional)</span>
+        <input hlmInput [formField]="identityForm.externalId" placeholder="e.g. SN-40912" />
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-sm font-medium">Category</span>
+        <hlm-select [value]="category()" [itemToString]="categoryOptionLabel" (valueChange)="onCategoryChange($event ?? '')">
+          <hlm-select-trigger class="w-full"><hlm-select-value /></hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (option of categoryOptions; track option.value) {
+              <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </label>
+    </div>
+  }
+
+  @if (step() === 2) {
+    <div class="flex flex-col gap-2">
+      <p class="text-muted-foreground text-xs">
+        Pre-filled from "{{ categoryLabel() }}" — adjust only if this specific device differs from the category default.
+      </p>
+      @for (row of capabilityRows(); track row.key) {
+        <label class="border-border flex items-center gap-2 rounded-control border px-3 py-2 text-sm">
+          <hlm-checkbox [checked]="row.value" (checkedChange)="toggleCapability(row.key, $event)" />
+          {{ row.label }}
+        </label>
+      }
+    </div>
+  }
+
+  @if (step() === 3) {
+    <div class="flex flex-col gap-2">
+      <p class="text-muted-foreground text-xs">
+        This device is attached to the location you opened this wizard from — it can't be changed here.
+      </p>
+      <dl class="border-border divide-border flex flex-col divide-y rounded-control border text-sm">
+        <div class="flex justify-between px-3 py-2"><dt class="text-muted-foreground">Building</dt><dd>{{ building()?.name ?? buildingId() }}</dd></div>
+        <div class="flex justify-between px-3 py-2"><dt class="text-muted-foreground">Floor</dt><dd>{{ floor()?.name ?? floorId() }}</dd></div>
+        <div class="flex justify-between px-3 py-2"><dt class="text-muted-foreground">Room / Space</dt><dd>{{ space()?.name ?? spaceId() }}</dd></div>
+      </dl>
+    </div>
+  }
+
+  @if (step() === 4) {
+    <div class="flex flex-col items-center gap-3 py-4 text-center">
+      @switch (verifyOutcome()) {
+        @case ('idle') {
+          <p class="text-muted-foreground text-sm">Confirm the device is powered on, then check for a signal before it can go live.</p>
+          <button hlmBtn type="button" (click)="checkSignal()">Check for Signal</button>
+        }
+        @case ('checking') {
+          <span class="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"></span>
+          <p class="text-muted-foreground text-sm">Waiting for a heartbeat…</p>
+        }
+        @case ('success') {
+          <span class="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full text-lg">✓</span>
+          <p class="text-sm font-medium">Signal received — device is live.</p>
+        }
+        @case ('failed') {
+          <span class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-lg text-red-600">!</span>
+          <p class="text-sm font-medium">No signal received.</p>
+          <div class="flex gap-2">
+            <button hlmBtn type="button" (click)="checkSignal()">Retry</button>
+            <button hlmBtn variant="ghost" type="button" (click)="deferVerification()">Save and verify later</button>
+          </div>
+        }
+        @case ('deferred') {
+          <span class="bg-muted text-muted-foreground flex h-10 w-10 items-center justify-center rounded-full text-lg">◔</span>
+          <p class="text-sm font-medium">Will save as Pending Verification.</p>
+        }
+      }
+    </div>
+  }
+
+  @if (step() === 5) {
+    <div class="flex flex-col gap-2">
+      <p class="text-muted-foreground text-xs">Review before adding this device.</p>
+      <dl class="border-border divide-border flex flex-col divide-y rounded-control border text-sm">
+        <div class="flex justify-between px-3 py-2"><dt class="text-muted-foreground">Name</dt><dd>{{ identityModel().name }}</dd></div>
+        <div class="flex justify-between px-3 py-2"><dt class="text-muted-foreground">Category</dt><dd>{{ categoryLabel() }}</dd></div>
+        <div class="flex justify-between px-3 py-2"><dt class="text-muted-foreground">Location</dt><dd>{{ space()?.name ?? spaceId() }}</dd></div>
+        <div class="flex justify-between px-3 py-2">
+          <dt class="text-muted-foreground">Status</dt>
+          <dd>{{ verifyOutcome() === 'success' ? 'Active' : 'Pending Verification' }}</dd>
+        </div>
+      </dl>
+    </div>
+  }
+
+  <div class="mt-2 flex items-center justify-between">
+    <button hlmBtn variant="ghost" type="button" (click)="step() === 1 ? cancelled.emit() : back()">
+      {{ step() === 1 ? 'Cancel' : 'Back' }}
+    </button>
+    @if (step() < 5) {
+      <button hlmBtn type="button" [disabled]="!canGoNext()" (click)="next()">Next</button>
+    } @else {
+      <button hlmBtn type="button" [disabled]="submitting()" (click)="submit()">
+        @if (submitting()) {
+          <span class="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+        }
+        Add Device
+      </button>
+    }
+  </div>
+</div>

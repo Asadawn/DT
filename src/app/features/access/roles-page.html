@@ -1,0 +1,7 @@
+<dt-page-header title="Roles" description="Permission matrix by role">
+  <div actions>
+    <a *hasPermission="'roles'; action: 'create'" hlmBtn [routerLink]="['/access/roles/new']">New Role</a>
+  </div>
+</dt-page-header>
+
+<dt-data-table [columns]="columns" [rows]="rows()" [loading]="loading()" emptyTitle="No roles" (rowClick)="openRole($event)" />
